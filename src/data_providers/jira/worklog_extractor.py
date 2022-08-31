@@ -1,7 +1,7 @@
 from datetime import datetime, date, timedelta
 from typing import Dict
 
-from src.data_providers import WorklogExtractor
+from data_providers import WorklogExtractor
 
 WEEKDAY_FRIDAY = 4  # date.weekday() starts with 0
 

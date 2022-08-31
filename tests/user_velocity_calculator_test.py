@@ -1,8 +1,8 @@
 import unittest
 
-from src.calculators import UserVelocityCalculator
-from src.data_providers.issue_provider import ProxyIssueProvider
-from src.data_providers.jira import JiraCustomFieldStoryPointExtractor, JiraStatusChangeWorklogExtractor
+from calculators import UserVelocityCalculator
+from data_providers.issue_provider import ProxyIssueProvider
+from data_providers.jira import JiraCustomFieldStoryPointExtractor, JiraStatusChangeWorklogExtractor
 
 TEST_USER = 'test_user'
 

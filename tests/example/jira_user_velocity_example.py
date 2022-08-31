@@ -1,11 +1,11 @@
 from atlassian import Jira
 
-from src.calculators import UserVelocityCalculator
-from src.calculators.velocity_calculator import VelocityTimeUnit
-from src.data_providers.jira.issue_provider import JiraIssueProvider
-from src.data_providers.jira.story_point_extractor import JiraTShirtStoryPointExtractor
-from src.data_providers.jira.worklog_extractor import JiraStatusChangeWorklogExtractor, JiraWorklogExtractor
-from src.data_providers.worklog_extractor import ChainedWorklogExtractor
+from calculators import UserVelocityCalculator
+from calculators.velocity_calculator import VelocityTimeUnit
+from data_providers.jira.issue_provider import JiraIssueProvider
+from data_providers.jira.story_point_extractor import JiraTShirtStoryPointExtractor
+from data_providers.jira.worklog_extractor import JiraStatusChangeWorklogExtractor, JiraWorklogExtractor
+from data_providers.worklog_extractor import ChainedWorklogExtractor
 
 
 def user_velocity_integration_test(client):

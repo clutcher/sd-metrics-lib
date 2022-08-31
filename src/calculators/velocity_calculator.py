@@ -1,9 +1,9 @@
 from enum import auto, Enum
 from typing import Dict
 
-from src.data_providers import WorklogExtractor
-from src.data_providers.issue_provider import IssueProvider
-from src.data_providers.story_point_extractor import StoryPointExtractor
+from data_providers import WorklogExtractor
+from data_providers.issue_provider import IssueProvider
+from data_providers.story_point_extractor import StoryPointExtractor
 
 
 class VelocityTimeUnit(Enum):

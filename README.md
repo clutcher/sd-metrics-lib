@@ -37,11 +37,11 @@ This code should work on any project and give at least some data for analysis.
 ```python
 from atlassian import Jira
 
-from src.calculators import UserVelocityCalculator
-from src.calculators.velocity_calculator import VelocityTimeUnit
-from src.data_providers.jira.issue_provider import JiraIssueProvider
-from src.data_providers.jira.worklog_extractor import JiraStatusChangeWorklogExtractor
-from src.data_providers.story_point_extractor import ConstantStoryPointExtractor
+from calculators import UserVelocityCalculator
+from calculators.velocity_calculator import VelocityTimeUnit
+from data_providers.jira.issue_provider import JiraIssueProvider
+from data_providers.jira.worklog_extractor import JiraStatusChangeWorklogExtractor
+from data_providers.story_point_extractor import ConstantStoryPointExtractor
 
 JIRA_SERVER = 'server_url'
 JIRA_LOGIN = 'login'
@@ -70,11 +70,11 @@ Jira.
 ```python
 from atlassian import Jira
 
-from src.calculators import UserVelocityCalculator
-from src.calculators.velocity_calculator import VelocityTimeUnit
-from src.data_providers.jira.issue_provider import JiraIssueProvider
-from src.data_providers.jira.worklog_extractor import JiraWorklogExtractor
-from src.data_providers.jira import JiraCustomFieldStoryPointExtractor
+from calculators import UserVelocityCalculator
+from calculators.velocity_calculator import VelocityTimeUnit
+from data_providers.jira.issue_provider import JiraIssueProvider
+from data_providers.jira.worklog_extractor import JiraWorklogExtractor
+from data_providers.jira import JiraCustomFieldStoryPointExtractor
 
 JIRA_SERVER = 'server_url'
 JIRA_LOGIN = 'login'
@@ -96,6 +96,10 @@ print(velocity)
 ```
 
 ## Version history
+
+### 1.0.1
+
++ **(Bug Fix)** Fix package import exception after installing from pypi.
 
 ### 1.0
 

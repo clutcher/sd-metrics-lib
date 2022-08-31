@@ -1,4 +1,4 @@
-from src.data_providers import IssueProvider
+from data_providers import IssueProvider
 
 
 class JiraIssueProvider(IssueProvider):
