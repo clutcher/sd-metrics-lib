@@ -97,7 +97,7 @@ print(velocity)
 
 ## Version history
 
-### 1.0.1
+### 1.0.2
 
 + **(Bug Fix)** Fix package import exception after installing from pypi.
 
