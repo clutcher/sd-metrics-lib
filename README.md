@@ -97,6 +97,10 @@ print(velocity)
 
 ## Version history
 
+### 1.0.1
+
++ **(Bug Fix)** Fix package import exception after installing from pypi.
+
 ### 1.0
 
 + **(Feature)** Add user velocity calculator.
