@@ -34,7 +34,8 @@ class VelocityCalculatorTestCase(unittest.TestCase):
         jql_issue_provider = ProxyIssueProvider([issue])
         t_shirt_story_point_extractor = JiraCustomFieldStoryPointExtractor('customfield_00000')
         jira_worklog_extractor = JiraStatusChangeWorklogExtractor(['12207'],
-                                                                  time_format='%Y-%m-%dT%H:%M:%S.%f%z')
+                                                                  time_format='%Y-%m-%dT%H:%M:%S.%f%z',
+                                                                  use_status_codes=True)
 
         # when
         self.velocity_calculator = UserVelocityCalculator(issue_provider=jql_issue_provider,
@@ -56,7 +57,8 @@ class VelocityCalculatorTestCase(unittest.TestCase):
         jql_issue_provider = ProxyIssueProvider([issue])
         t_shirt_story_point_extractor = JiraCustomFieldStoryPointExtractor('customfield_00000')
         jira_worklog_extractor = JiraStatusChangeWorklogExtractor(['12207'],
-                                                                  time_format='%Y-%m-%dT%H:%M:%S.%f%z')
+                                                                  time_format='%Y-%m-%dT%H:%M:%S.%f%z',
+                                                                  use_status_codes=True)
 
         # when
         self.velocity_calculator = UserVelocityCalculator(issue_provider=jql_issue_provider,
@@ -77,7 +79,8 @@ class VelocityCalculatorTestCase(unittest.TestCase):
         jql_issue_provider = ProxyIssueProvider([issue, issue2])
         t_shirt_story_point_extractor = JiraCustomFieldStoryPointExtractor('customfield_00000')
         jira_worklog_extractor = JiraStatusChangeWorklogExtractor(['12207'],
-                                                                  time_format='%Y-%m-%dT%H:%M:%S.%f%z')
+                                                                  time_format='%Y-%m-%dT%H:%M:%S.%f%z',
+                                                                  use_status_codes=True)
 
         # when
         self.velocity_calculator = UserVelocityCalculator(issue_provider=jql_issue_provider,
