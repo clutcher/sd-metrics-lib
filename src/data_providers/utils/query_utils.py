@@ -1,5 +1,10 @@
+import calendar
 import datetime
 from enum import Enum, auto
+
+from dateutil.relativedelta import relativedelta
+
+from data_providers.utils import VelocityTimeUnit
 
 
 class JiraIssueSearchQueryBuilder:
@@ -57,3 +62,51 @@ class JiraIssueSearchQueryBuilder:
 
     def __add_filter(self, query_part_type: __QueryParts, query_part):
         self.query_parts[query_part_type] = query_part.strip()
+
+
+class TimeRangeGenerator:
+
+    def __init__(self, time_unit: VelocityTimeUnit, number_of_ranges: int) -> None:
+        self.time_unit = time_unit
+        self.number_of_ranges = number_of_ranges
+        self.period_initial_date = datetime.datetime.today()
+
+    def __iter__(self):
+        for i in range(self.number_of_ranges):
+            yield tuple((self.__resolve_start_date_of_period(), self.__resolve_end_date_of_period()))
+            self.__decrease_date_range()
+
+    def __decrease_date_range(self):
+        if self.time_unit == VelocityTimeUnit.HOUR:
+            self.period_initial_date -= relativedelta(hours=1)
+        elif self.time_unit == VelocityTimeUnit.DAY:
+            self.period_initial_date -= relativedelta(days=1)
+        elif self.time_unit == VelocityTimeUnit.WEEK:
+            self.period_initial_date -= relativedelta(weeks=1)
+        elif self.time_unit == VelocityTimeUnit.MONTH:
+            self.period_initial_date -= relativedelta(months=1)
+
+    def __resolve_start_date_of_period(self) -> datetime.datetime:
+        if self.time_unit == VelocityTimeUnit.HOUR:
+            return self.period_initial_date.replace(minute=0, second=0, microsecond=0)
+        elif self.time_unit == VelocityTimeUnit.DAY:
+            return self.period_initial_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        elif self.time_unit == VelocityTimeUnit.WEEK:
+            current_day_of_week = self.period_initial_date.weekday()
+            delta_with_first_day_of_week = datetime.timedelta(days=current_day_of_week)
+            return self.period_initial_date - delta_with_first_day_of_week
+        elif self.time_unit == VelocityTimeUnit.MONTH:
+            return self.period_initial_date.replace(day=1)
+
+    def __resolve_end_date_of_period(self):
+        if self.time_unit == VelocityTimeUnit.HOUR:
+            return self.period_initial_date.replace(minute=59, second=59, microsecond=999999)
+        elif self.time_unit == VelocityTimeUnit.DAY:
+            return self.period_initial_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+        elif self.time_unit == VelocityTimeUnit.WEEK:
+            current_day_of_week = self.period_initial_date.weekday()
+            delta_with_last_day_of_week = datetime.timedelta(days=6 - current_day_of_week)
+            return self.period_initial_date - delta_with_last_day_of_week
+        elif self.time_unit == VelocityTimeUnit.MONTH:
+            last_day_of_month = calendar.monthrange(self.period_initial_date.year, self.period_initial_date.month)[1]
+            return self.period_initial_date.replace(day=last_day_of_month)
