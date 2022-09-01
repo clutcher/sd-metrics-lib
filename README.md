@@ -28,6 +28,12 @@ General architecture is simple and has 2 main parts:
         + **ChainedWorklogExtractor** implementation class, which allows "chain" **WorklogExtractor** to execute them
           one by one.
 
+Also library provides few util classes:
+
++ **JiraIssueSearchQueryBuilder** builder for JQL queries.
++ **TimeRangeGenerator** generator for time ranges. Useful for filtering by resolution date to calculate velocity for
+  set of period of time.
+
 ## Code examples
 
 ### Calculate amount of tickets developer resolves per day based on Jira ticket status change history.
@@ -96,6 +102,12 @@ print(velocity)
 ```
 
 ## Version history
+
+### 1.0.3
+
++ **(Improvement)** Add JiraIssueSearchQueryBuilder util class.
++ **(Improvement)** Add TimeRangeGenerator util class.
++ **(Bug Fix)** Fix filtering by status when no status list passed.
 
 ### 1.0.2
 
