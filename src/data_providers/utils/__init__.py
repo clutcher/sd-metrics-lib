@@ -1,0 +1,1 @@
+from data_providers.utils.query_utils import JiraIssueSearchQueryBuilder
