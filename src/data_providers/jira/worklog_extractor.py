@@ -192,12 +192,16 @@ class JiraStatusChangeWorklogExtractor(WorklogExtractor):
         return 'UNKNOWN'
 
     def _is_status_changed_into_required(self, changelog_entry):
+        if self.transition_status_codes is None:
+            return True
         if self.use_status_codes:
             return changelog_entry['to'] in self.transition_status_codes
         else:
             return changelog_entry['toString'] in self.transition_status_codes
 
     def _is_status_changed_from_required(self, changelog_entry):
+        if self.transition_status_codes is None:
+            return True
         if self.use_status_codes:
             return changelog_entry['from'] in self.transition_status_codes
         else:
