@@ -1,1 +1,2 @@
+from data_providers.utils.enums import VelocityTimeUnit
 from data_providers.utils.query_utils import JiraIssueSearchQueryBuilder

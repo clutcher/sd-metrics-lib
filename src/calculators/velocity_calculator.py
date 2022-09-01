@@ -1,21 +1,14 @@
-from enum import auto, Enum
 from typing import Dict
 
 from data_providers import WorklogExtractor
 from data_providers.issue_provider import IssueProvider
 from data_providers.story_point_extractor import StoryPointExtractor
+from data_providers.utils import VelocityTimeUnit
 
 SECONDS_IN_HOUR = 3600
 WORKING_HOURS_PER_DAY = 8
 WORKING_DAYS_PER_WEEK = 5
 WORKING_WEEKS_IN_MONTH = 4
-
-
-class VelocityTimeUnit(Enum):
-    HOUR = auto()
-    DAY = auto()
-    WEEK = auto()
-    MONTH = auto()
 
 
 class UserVelocityCalculator:
