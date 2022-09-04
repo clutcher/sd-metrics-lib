@@ -11,6 +11,8 @@ General architecture is simple and has 2 main parts:
 + _calculators_ package:
     + **UserVelocityCalculator** class calculates user velocity or developer performance in other words. Requires
       IssueProvider, StoryPointExtractor and WorklogExtractor for calculation.
+    + **GeneralizedTeamVelocityCalculator** class calculates team generalized velocity. Requires
+      IssueProvider, StoryPointExtractor and IssueTotalSpentTimeExtractor for calculation.
 + _data_providers_ package:
     + **IssueProvider** interface designed to provide issues/tickets for calculators.
         + **JiraIssueProvider** implementation class, which fetches issues from Jira by JQL using jira client
@@ -102,6 +104,14 @@ print(velocity)
 ```
 
 ## Version history
+
+### 1.1
+
++ **(Feature)** Add team velocity calculator.
++ **(Improvement)** Add JQL filter for last modified data.
++ **(Bug Fix)** Fix wrong user resolving in JiraStatusChangeWorklogExtractor.
++ **(Bug Fix)** Fix resolving more time than spent period of time.
++ **(Bug Fix)** Fix Jira filter query joins without AND.
 
 ### 1.0.3
 
