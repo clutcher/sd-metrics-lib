@@ -9,6 +9,13 @@ class WorklogExtractor(ABC):
         pass
 
 
+class IssueTotalSpentTimeExtractor(ABC):
+
+    @abstractmethod
+    def get_total_spent_time(self, issue) -> int:
+        pass
+
+
 class ChainedWorklogExtractor(WorklogExtractor):
 
     def __init__(self, worklog_extractor_list: list[WorklogExtractor]) -> None:

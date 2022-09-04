@@ -1,8 +1,9 @@
 from datetime import datetime, date, timedelta
 from typing import Dict
 
-from calculators.velocity_calculator import WORKING_HOURS_PER_DAY
+from calculators.utils import time_utils
 from data_providers import WorklogExtractor
+from data_providers.worklog_extractor import IssueTotalSpentTimeExtractor
 
 WEEKDAY_FRIDAY = 4  # date.weekday() starts with 0
 
@@ -138,13 +139,13 @@ class JiraStatusChangeWorklogExtractor(WorklogExtractor):
         if period_delta.days > 0:
             work_days = self.__count_work_days(start_time_period, end_time_period)
             round_up_period_days = period_delta.days + 1
-            return min(work_days, round_up_period_days) * WORKING_HOURS_PER_DAY * 3600
+            return min(work_days, round_up_period_days) * time_utils.get_seconds_in_day()
         elif period_delta.total_seconds() < 15 * 60:
             return None
-        elif period_delta.total_seconds() < WORKING_HOURS_PER_DAY * 3600:
+        elif period_delta.total_seconds() < time_utils.get_seconds_in_day():
             return period_delta.total_seconds()
         else:
-            return WORKING_HOURS_PER_DAY * 3600
+            return time_utils.get_seconds_in_day()
 
     def _extract_user_from_changelog(self, changelog_entry):
         if self.use_user_name:
@@ -215,3 +216,19 @@ class JiraStatusChangeWorklogExtractor(WorklogExtractor):
     def __clean_interval_times(self):
         self.interval_start_time = None
         self.interval_end_time = None
+
+
+class JiraResolutionTimeIssueTotalSpentTimeExtractor(IssueTotalSpentTimeExtractor):
+
+    def __init__(self, time_format='%Y-%m-%dT%H:%M:%S.%f%z', ) -> None:
+        self.time_format = time_format
+
+    def get_total_spent_time(self, issue) -> int:
+        resolution_date_str = issue['fields']['resolutiondate']
+        if resolution_date_str is None:
+            return 0
+
+        resolution_date = datetime.strptime(resolution_date_str, self.time_format)
+        creation_date = datetime.strptime(issue['fields']['created'], self.time_format)
+        spent_time = (resolution_date - creation_date)
+        return int(spent_time.total_seconds())
