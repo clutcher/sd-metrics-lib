@@ -1,6 +1,7 @@
 from datetime import datetime, date, timedelta
 from typing import Dict
 
+from calculators.velocity_calculator import WORKING_HOURS_PER_DAY
 from data_providers import WorklogExtractor
 
 WEEKDAY_FRIDAY = 4  # date.weekday() starts with 0
@@ -137,13 +138,13 @@ class JiraStatusChangeWorklogExtractor(WorklogExtractor):
         if period_delta.days > 0:
             work_days = self.__count_work_days(start_time_period, end_time_period)
             round_up_period_days = period_delta.days + 1
-            return min(work_days, round_up_period_days) * 6 * 3600
+            return min(work_days, round_up_period_days) * WORKING_HOURS_PER_DAY * 3600
         elif period_delta.total_seconds() < 15 * 60:
             return None
-        elif period_delta.total_seconds() < 6 * 3600:
+        elif period_delta.total_seconds() < WORKING_HOURS_PER_DAY * 3600:
             return period_delta.total_seconds()
         else:
-            return 6 * 3600
+            return WORKING_HOURS_PER_DAY * 3600
 
     def _extract_user_from_changelog(self, changelog_entry):
         if self.use_user_name:
