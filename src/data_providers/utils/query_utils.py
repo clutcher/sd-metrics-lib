@@ -13,6 +13,7 @@ class JiraIssueSearchQueryBuilder:
         TYPE = auto()
         STATUS = auto()
         RESOLUTION_DATE = auto()
+        LAST_MODIFIED = auto()
 
     def __init__(self,
                  projects: list[str] = None,
@@ -42,10 +43,18 @@ class JiraIssueSearchQueryBuilder:
     def for_resolution_dates(self, resolution_dates: tuple[datetime.datetime, datetime.datetime]):
         if resolution_dates is None:
             return
-        start_date_str = resolution_dates[0].strftime('%Y-%m-%d')
-        end_date_str = resolution_dates[1].strftime('%Y-%m-%d')
-        resolution_date_filter = "resolutiondate >= '%s' and resolutiondate <= '%s'" % (start_date_str, end_date_str)
-        self.__add_filter(self.__QueryParts.RESOLUTION_DATE, resolution_date_filter)
+        date_filter = self.__create_date_range_filter("resolutiondate",
+                                                      resolution_dates[0],
+                                                      resolution_dates[1])
+        self.__add_filter(self.__QueryParts.RESOLUTION_DATE, date_filter)
+
+    def for_last_modified_dates(self, last_modified_datas: tuple[datetime.datetime, datetime.datetime]):
+        if last_modified_datas is None:
+            return
+        date_filter = self.__create_date_range_filter("updated",
+                                                      last_modified_datas[0],
+                                                      last_modified_datas[1])
+        self.__add_filter(self.__QueryParts.LAST_MODIFIED, date_filter)
 
     def for_issue_types(self, issue_types):
         if issue_types is None:
@@ -59,6 +68,12 @@ class JiraIssueSearchQueryBuilder:
     @staticmethod
     def __convert_in_jql_value_list(statuses):
         return ', '.join(['"%s"' % w for w in statuses])
+
+    @staticmethod
+    def __create_date_range_filter(field_name: str, start_date: datetime.date, end_date: datetime.date):
+        start_date_str = start_date.strftime('%Y-%m-%d')
+        end_date_str = end_date.strftime('%Y-%m-%d')
+        return "%s >= '%s' and %s <= '%s'" % (field_name, start_date_str, field_name, end_date_str)
 
     def __add_filter(self, query_part_type: __QueryParts, query_part):
         self.query_parts[query_part_type] = query_part.strip()
