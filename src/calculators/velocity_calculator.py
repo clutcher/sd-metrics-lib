@@ -134,6 +134,12 @@ class GeneralizedTeamVelocityCalculator(JiraMetricsCalculator):
     def get_velocity(self) -> Dict[str, float]:
         return self.velocity
 
+    def get_story_points(self):
+        return self.total_resolved_story_points
+
+    def get_spent_time(self):
+        return self.total_spent_time_in_seconds
+
     def _sum_story_points_and_worklog(self, issue_story_points: float, issue_total_spent_time: int):
         if issue_total_spent_time == 0:
             return
