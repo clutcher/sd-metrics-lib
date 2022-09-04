@@ -54,7 +54,7 @@ class JiraIssueSearchQueryBuilder:
         self.__add_filter(self.__QueryParts.TYPE, issue_type_filter)
 
     def build_query(self) -> str:
-        return ' '.join(self.query_parts.values())
+        return ' AND '.join(self.query_parts.values())
 
     @staticmethod
     def __convert_in_jql_value_list(statuses):
