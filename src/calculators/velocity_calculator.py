@@ -101,4 +101,7 @@ class GeneralizedTeamVelocityCalculator:
         spent_time = time_utils.convert_time(self.total_spent_time_in_seconds, time_unit)
         story_points = self.total_resolved_story_points
 
-        self.velocity = story_points / spent_time
+        if spent_time == 0:
+            self.velocity = 0
+        else:
+            self.velocity = story_points / spent_time
