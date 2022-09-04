@@ -105,6 +105,10 @@ print(velocity)
 
 ## Version history
 
+### 1.1.2
+
++ **(Improvement)** Add story points getter for GeneralizedTeamVelocityCalculator.
+
 ### 1.1.1
 
 + **(Improvement)** Execute data fetching in Jira velocity calculators only once.
