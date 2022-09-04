@@ -74,7 +74,6 @@ class JiraStatusChangeWorklogExtractor(WorklogExtractor):
 
         self.time_format = time_format
 
-        self.last_assigned_user = self._default_assigned_user()
         self.use_user_name = use_user_name
         self.interval_start_time = None
         self.interval_end_time = None
@@ -86,11 +85,12 @@ class JiraStatusChangeWorklogExtractor(WorklogExtractor):
         if len(changelog_history) == 0:
             return working_time_per_user
 
+        last_assigned_user = self._default_assigned_user()
         for changelog_entry in changelog_history:
             if self.__is_user_change_entry(changelog_entry):
-                last_assigned = self._extract_user_from_changelog(changelog_entry)
-                if self._is_allowed_user(last_assigned):
-                    self.last_assigned_user = last_assigned
+                assignee = self._extract_user_from_changelog(changelog_entry)
+                if self._is_allowed_user(assignee):
+                    last_assigned_user = assignee
 
             if self._is_status_change_entry(changelog_entry):
                 if self._is_status_changed_into_required(changelog_entry):
@@ -103,8 +103,8 @@ class JiraStatusChangeWorklogExtractor(WorklogExtractor):
                     seconds_in_status = self._extract_working_time_from_period(self.interval_start_time,
                                                                                self.interval_end_time)
                     if seconds_in_status is not None:
-                        working_time_per_user[self.last_assigned_user] = working_time_per_user.get(
-                            self.last_assigned_user, 0) + seconds_in_status
+                        working_time_per_user[last_assigned_user] = working_time_per_user.get(
+                            last_assigned_user, 0) + seconds_in_status
 
                     self.__clean_interval_times()
 
