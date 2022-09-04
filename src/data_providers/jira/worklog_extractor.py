@@ -136,7 +136,8 @@ class JiraStatusChangeWorklogExtractor(WorklogExtractor):
 
         if period_delta.days > 0:
             work_days = self.__count_work_days(start_time_period, end_time_period)
-            return work_days * 6 * 3600
+            round_up_period_days = period_delta.days + 1
+            return min(work_days, round_up_period_days) * 6 * 3600
         elif period_delta.total_seconds() < 15 * 60:
             return None
         elif period_delta.total_seconds() < 6 * 3600:
