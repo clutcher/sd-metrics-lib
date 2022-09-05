@@ -9,7 +9,7 @@ from data_providers.jira.worklog_extractor import JiraResolutionTimeIssueTotalSp
 def team_velocity_integration_test(client):
     def create_issue_provider(jira):
         jql = " type in (Story, Bug, 'Tech Debt', 'Regression Defect') AND project in ('TBC') AND resolutiondate >= 2022-05-01 "
-        jql_issue_provider = JiraIssueProvider(jira, jql, expand='changelog')
+        jql_issue_provider = JiraIssueProvider(jira, jql, expand=['changelog'])
         return jql_issue_provider
 
     def create_story_point_extractor():

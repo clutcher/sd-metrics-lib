@@ -2,16 +2,18 @@ from atlassian import Jira
 
 from calculators import UserVelocityCalculator
 from calculators.velocity_calculator import VelocityTimeUnit
-from data_providers.jira.issue_provider import JiraIssueProvider
+from data_providers.jira.issue_provider import CachingJiraIssueProvider
 from data_providers.jira.story_point_extractor import JiraTShirtStoryPointExtractor
 from data_providers.jira.worklog_extractor import JiraStatusChangeWorklogExtractor, JiraWorklogExtractor
 from data_providers.worklog_extractor import ChainedWorklogExtractor
 
+CACHE = {}
 
-def user_velocity_integration_test(client):
+
+def user_velocity_integration_test(client, expand=None):
     def create_issue_provider(jira):
         jql = " type in (Story, Bug, 'Tech Debt', 'Regression Defect') AND project in ('TBC') AND resolutiondate >= 2022-08-01 "
-        jql_issue_provider = JiraIssueProvider(jira, jql, expand='changelog')
+        jql_issue_provider = CachingJiraIssueProvider(jira, jql, expand=expand, cache=CACHE)
         return jql_issue_provider
 
     def create_story_point_extractor():
@@ -54,4 +56,4 @@ if __name__ == '__main__':
     JIRA_SERVER = ''
     jira_client = Jira(JIRA_SERVER, JIRA_LOGIN, JIRA_PASS, cloud=True)
 
-    user_velocity_integration_test(jira_client)
+    user_velocity_integration_test(jira_client, ['changelog'])

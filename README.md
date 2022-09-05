@@ -17,6 +17,7 @@ General architecture is simple and has 2 main parts:
     + **IssueProvider** interface designed to provide issues/tickets for calculators.
         + **JiraIssueProvider** implementation class, which fetches issues from Jira by JQL using jira client
           from [atlassian-python-api](https://pypi.org/project/atlassian-python-api/).
+          + **CachingJiraIssueProvider** wraps _JiraIssueProvider_ with caching.
         + **ProxyIssueProvider** wrapper for issues fetched from another data providers.
     + **StoryPointExtractor** interface designed to extract "story points" from issue.
         + **JiraCustomFieldStoryPointExtractor** implementation class, which extract value of custom field from Jira.
@@ -57,7 +58,7 @@ JIRA_PASS = 'password'
 jira_client = Jira(JIRA_SERVER, JIRA_LOGIN, JIRA_PASS, cloud=True)
 
 jql = " project in ('TBC') AND resolutiondate >= 2022-08-01 "
-jql_issue_provider = JiraIssueProvider(jira_client, jql, expand='changelog')
+jql_issue_provider = JiraIssueProvider(jira_client, jql, expand=['changelog'])
 
 story_point_extractor = ConstantStoryPointExtractor()
 jira_worklog_extractor = JiraStatusChangeWorklogExtractor(['In Progress', 'In Development'])
@@ -104,6 +105,10 @@ print(velocity)
 ```
 
 ## Version history
+
+### 1.1.3
+
++ **(Feature)** Add CachingJiraIssueProvider.
 
 ### 1.1.2
 
