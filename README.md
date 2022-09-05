@@ -16,7 +16,7 @@ General architecture is simple and has 2 main parts:
 + _data_providers_ package:
     + **IssueProvider** interface designed to provide issues/tickets for calculators.
         + **JiraIssueProvider** implementation class, which fetches issues from Jira by JQL using jira client
-          from [atlassian-python-api](https://pypi.org/project/atlassian-python-api/).
+          from [atlassian-python-api](https://pypi.org/project/atlassian-python-api/). Supports multithreading.
           + **CachingJiraIssueProvider** wraps _JiraIssueProvider_ with caching.
         + **ProxyIssueProvider** wrapper for issues fetched from another data providers.
     + **StoryPointExtractor** interface designed to extract "story points" from issue.
@@ -105,6 +105,10 @@ print(velocity)
 ```
 
 ## Version history
+
+### 1.1.4
+
++ **(Improvement)** Add multithreading support for JiraIssueProvider.
 
 ### 1.1.3
 
