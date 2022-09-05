@@ -1,3 +1,6 @@
+import datetime
+from concurrent.futures import ThreadPoolExecutor
+
 from atlassian import Jira
 
 from calculators import UserVelocityCalculator
@@ -9,11 +12,14 @@ from data_providers.worklog_extractor import ChainedWorklogExtractor
 
 CACHE = {}
 
+jira_fetch_executor = ThreadPoolExecutor(thread_name_prefix="jira-fetch")
 
 def user_velocity_integration_test(client, expand=None):
     def create_issue_provider(jira):
-        jql = " type in (Story, Bug, 'Tech Debt', 'Regression Defect') AND project in ('TBC') AND resolutiondate >= 2022-08-01 "
-        jql_issue_provider = CachingJiraIssueProvider(jira, jql, expand=expand, cache=CACHE)
+        jql = " type in (Story, Bug, 'Tech Debt', 'Regression Defect') AND project in ('TBC') AND resolutiondate >= 2022-06-01 "
+        jql_issue_provider = CachingJiraIssueProvider(jira, jql, expand=expand,
+                                                      # thread_pool_executor=jira_fetch_executor,
+                                                      cache=CACHE)
         return jql_issue_provider
 
     def create_story_point_extractor():
