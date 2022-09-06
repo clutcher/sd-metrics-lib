@@ -112,9 +112,9 @@ class JiraStatusChangeWorklogExtractor(WorklogExtractor):
 
         return working_time_per_user
 
-    @staticmethod
-    def _extract_issue_changelog_history(issue):
-        """ Create a flat list of changelog history entries and add created time into each history entry """
+    def _extract_issue_changelog_history(self, issue):
+        """ Create a flat list of user or status changelog history entries
+        and add created time into each history entry """
 
         if not isinstance(issue, dict):
             return []
@@ -125,12 +125,14 @@ class JiraStatusChangeWorklogExtractor(WorklogExtractor):
         changelog_history = []
         changelog = issue['changelog']['histories']
         for history_entry in changelog:
-            if 'items' in history_entry:
-                for history_entry_item in history_entry['items']:
+            if 'items' not in history_entry:
+                continue
+            for history_entry_item in history_entry['items']:
+                if self._is_status_change_entry(history_entry_item) or self.__is_user_change_entry(history_entry_item):
                     history_entry_item['created'] = history_entry['created']
                     changelog_history.append(history_entry_item)
 
-        # Jira API sends changelog in last entry first
+        # Jira API sends changelog in last entry first,
         # so we want to reverse it to iterate for better iteration
         changelog_history.reverse()
         return changelog_history
