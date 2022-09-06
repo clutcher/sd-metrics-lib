@@ -116,6 +116,9 @@ class JiraStatusChangeWorklogExtractor(WorklogExtractor):
     def _extract_issue_changelog_history(issue):
         """ Create a flat list of changelog history entries and add created time into each history entry """
 
+        if not isinstance(issue, dict):
+            return []
+
         if 'changelog' not in issue or 'histories' not in issue['changelog']:
             return []
 
