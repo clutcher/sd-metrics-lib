@@ -93,24 +93,30 @@ class JiraStatusChangeWorklogExtractor(WorklogExtractor):
                 assignee = self._extract_user_from_changelog(changelog_entry)
                 if self._is_allowed_user(assignee):
                     last_assigned_user = assignee
-
-            if self._is_status_change_entry(changelog_entry):
+            elif self._is_status_change_entry(changelog_entry):
                 if self._is_status_changed_into_required(changelog_entry):
-                    self.interval_start_time = datetime.strptime(changelog_entry['created'], self.time_format)
+                    if self.interval_start_time is None:
+                        self.interval_start_time = datetime.strptime(changelog_entry['created'], self.time_format)
+                elif self._is_status_changed_from_required(changelog_entry):
+                    if self.interval_end_time is None:
+                        self.interval_end_time = datetime.strptime(changelog_entry['created'], self.time_format)
 
-                if self._is_status_changed_from_required(changelog_entry):
-                    self.interval_end_time = datetime.strptime(changelog_entry['created'], self.time_format)
+                self.__sum_working_time(working_time_per_user, last_assigned_user)
 
-                if self.__is_interval_found_for_status_change():
-                    seconds_in_status = self._extract_working_time_from_period(self.interval_start_time,
-                                                                               self.interval_end_time)
-                    if seconds_in_status is not None:
-                        working_time_per_user[last_assigned_user] = working_time_per_user.get(
-                            last_assigned_user, 0) + seconds_in_status
-
-                    self.__clean_interval_times()
+        if self._is_current_status_a_required_status(issue):
+            self.interval_end_time = datetime.now().astimezone()
+            self.__sum_working_time(working_time_per_user, last_assigned_user)
 
         return working_time_per_user
+
+    def __sum_working_time(self, working_time_per_user, last_assigned_user):
+        if self.__is_interval_found_for_status_change():
+            seconds_in_status = self._extract_working_time_from_period(self.interval_start_time, self.interval_end_time)
+            if seconds_in_status is not None:
+                working_time_per_user[last_assigned_user] = working_time_per_user.get(
+                    last_assigned_user, 0) + seconds_in_status
+
+            self.__clean_interval_times()
 
     def _extract_issue_changelog_history(self, issue):
         """ Create a flat list of user or status changelog history entries
@@ -214,6 +220,16 @@ class JiraStatusChangeWorklogExtractor(WorklogExtractor):
             return changelog_entry['from'] in self.transition_status_codes
         else:
             return changelog_entry['fromString'] in self.transition_status_codes
+
+    def _is_current_status_a_required_status(self, issue):
+        if self.transition_status_codes is None:
+            return True
+        if 'fields' not in issue or 'status' not in issue['fields']:
+            return False
+        if self.use_status_codes:
+            return issue['fields']['status']['id'] in self.transition_status_codes in self.transition_status_codes
+        else:
+            return issue['fields']['status']['name'] in self.transition_status_codes
 
     def __is_interval_found_for_status_change(self):
         return self.interval_start_time is not None and self.interval_end_time is not None
