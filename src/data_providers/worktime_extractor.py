@@ -52,3 +52,26 @@ class SimpleWorkTimeExtractor(WorkTimeExtractor):
             remainder = 5 + remainder
 
         return weeks * 5 + remainder
+
+
+class BoundarySimpleWorkTimeExtractor(SimpleWorkTimeExtractor):
+
+    def __init__(self,
+                 start_time_boundary: datetime.date,
+                 end_time_boundary: datetime.date) -> None:
+        self.start_time_boundary = start_time_boundary
+        self.end_time_boundary = end_time_boundary
+
+    def extract_time_from_period(self, start_time_period: datetime.date, end_time_period: datetime.date) -> int | None:
+
+        if self.start_time_boundary < start_time_period:
+            new_start_period = start_time_period
+        else:
+            new_start_period = self.start_time_boundary
+
+        if self.end_time_boundary > end_time_period:
+            new_end_time_period = end_time_period
+        else:
+            new_end_time_period = self.end_time_boundary
+
+        return super().extract_time_from_period(new_start_period, new_end_time_period)
