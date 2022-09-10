@@ -6,3 +6,15 @@ class VelocityTimeUnit(Enum):
     DAY = auto()
     WEEK = auto()
     MONTH = auto()
+
+
+class HealthStatus(Enum):
+    GREEN = auto()
+    YELLOW = auto()
+    RED = auto()
+
+
+class SeniorityLevel(Enum):
+    JUNIOR = auto()
+    MIDDLE = auto()
+    SENIOR = auto()
