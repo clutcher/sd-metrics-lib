@@ -19,8 +19,8 @@ class JiraMetricsCalculator(MetricCalculator, ABC):
         if not self.is_data_fetched():
             self._extract_data_from_issues()
             self.mark_data_fetched()
-        self._calculate_velocity(velocity_time_unit)
-        return self.get_velocity()
+        self._calculate_metric(velocity_time_unit)
+        return self.get_metric()
 
     def mark_data_fetched(self):
         self.data_fetched = True
@@ -29,7 +29,7 @@ class JiraMetricsCalculator(MetricCalculator, ABC):
         return self.is_data_fetched is True
 
     @abstractmethod
-    def _calculate_velocity(self, time_unit: VelocityTimeUnit):
+    def _calculate_metric(self, time_unit: VelocityTimeUnit):
         pass
 
     @abstractmethod
@@ -37,7 +37,7 @@ class JiraMetricsCalculator(MetricCalculator, ABC):
         pass
 
     @abstractmethod
-    def get_velocity(self) -> Dict[str, float]:
+    def get_metric(self) -> Dict[str, float]:
         pass
 
 
@@ -55,7 +55,7 @@ class UserVelocityCalculator(JiraMetricsCalculator):
         self.resolved_story_points_per_user = {}
         self.time_in_seconds_spent_per_user = {}
 
-    def _calculate_velocity(self, time_unit: VelocityTimeUnit):
+    def _calculate_metric(self, time_unit: VelocityTimeUnit):
         for user in self.resolved_story_points_per_user:
             spent_time_in_seconds = self.time_in_seconds_spent_per_user[user]
             if spent_time_in_seconds != 0:
@@ -73,7 +73,7 @@ class UserVelocityCalculator(JiraMetricsCalculator):
 
                 self._sum_story_points_and_worklog(issue_story_points, time_user_worked_on_issue)
 
-    def get_velocity(self):
+    def get_metric(self):
         return self.velocity_per_user
 
     def get_story_points(self):
@@ -113,7 +113,7 @@ class GeneralizedTeamVelocityCalculator(JiraMetricsCalculator):
         self.story_point_extractor = story_point_extractor
         self.time_extractor = time_extractor
 
-    def _calculate_velocity(self, time_unit: VelocityTimeUnit):
+    def _calculate_metric(self, time_unit: VelocityTimeUnit):
         spent_time = time_utils.convert_time(self.total_spent_time_in_seconds, time_unit)
         story_points = self.total_resolved_story_points
 
@@ -131,7 +131,7 @@ class GeneralizedTeamVelocityCalculator(JiraMetricsCalculator):
 
                 self._sum_story_points_and_worklog(issue_story_points, time_spent_on_issue)
 
-    def get_velocity(self) -> Dict[str, float]:
+    def get_metric(self) -> Dict[str, float]:
         return self.velocity
 
     def get_story_points(self):
