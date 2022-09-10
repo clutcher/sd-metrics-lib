@@ -7,6 +7,8 @@ WORKING_WEEKS_IN_MONTH = 4
 
 
 def convert_time(spent_time_in_seconds: int, time_unit: VelocityTimeUnit):
+    if spent_time_in_seconds is None:
+        return 0
     if time_unit == VelocityTimeUnit.HOUR:
         return spent_time_in_seconds / SECONDS_IN_HOUR
     elif time_unit == VelocityTimeUnit.DAY:
