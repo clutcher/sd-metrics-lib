@@ -5,6 +5,8 @@ WORKING_HOURS_PER_DAY = 8
 WORKING_DAYS_PER_WEEK = 5
 WORKING_WEEKS_IN_MONTH = 4
 
+WEEKDAY_FRIDAY = 4  # date.weekday() starts with 0
+
 
 def convert_time(spent_time_in_seconds: int, time_unit: VelocityTimeUnit):
     if spent_time_in_seconds is None:

@@ -1,11 +1,9 @@
-from datetime import datetime, date, timedelta
+from datetime import datetime
 from typing import Dict
 
-from calculators.utils import time_utils
 from data_providers import WorklogExtractor
 from data_providers.worklog_extractor import IssueTotalSpentTimeExtractor
-
-WEEKDAY_FRIDAY = 4  # date.weekday() starts with 0
+from data_providers.worktime_extractor import SimpleWorkTimeExtractor, WorkTimeExtractor
 
 
 class JiraWorklogExtractor(WorklogExtractor):
@@ -62,19 +60,25 @@ class JiraWorklogExtractor(WorklogExtractor):
         return worklog["author"]["accountId"]
 
 
+SIMPLE_WORKTIME_EXTRACTOR = SimpleWorkTimeExtractor()
+
+
 class JiraStatusChangeWorklogExtractor(WorklogExtractor):
 
     def __init__(self, transition_statuses: list[str],
                  user_filter: list[str] = None,
                  time_format='%Y-%m-%dT%H:%M:%S.%f%z',
                  use_user_name=False,
-                 use_status_codes=False) -> None:
+                 use_status_codes=False,
+                 worktime_extractor: WorkTimeExtractor = SIMPLE_WORKTIME_EXTRACTOR) -> None:
 
         self.transition_status_codes = transition_statuses
         self.use_status_codes = use_status_codes
         self.user_filter = user_filter
 
         self.time_format = time_format
+
+        self.worktime_extractor = worktime_extractor
 
         self.use_user_name = use_user_name
         self.interval_start_time = None
@@ -111,7 +115,8 @@ class JiraStatusChangeWorklogExtractor(WorklogExtractor):
 
     def __sum_working_time(self, working_time_per_user, last_assigned_user):
         if self.__is_interval_found_for_status_change():
-            seconds_in_status = self._extract_working_time_from_period(self.interval_start_time, self.interval_end_time)
+            seconds_in_status = self.worktime_extractor.extract_time_from_period(self.interval_start_time,
+                                                                                 self.interval_end_time)
             if seconds_in_status is not None:
                 working_time_per_user[last_assigned_user] = working_time_per_user.get(
                     last_assigned_user, 0) + seconds_in_status
@@ -143,48 +148,11 @@ class JiraStatusChangeWorklogExtractor(WorklogExtractor):
         changelog_history.reverse()
         return changelog_history
 
-    def _extract_working_time_from_period(self, start_time_period, end_time_period) -> int | None:
-        # Use businesstimedelta lib for more precision calculation
-        period_delta = end_time_period - start_time_period
-
-        if period_delta.days > 0:
-            work_days = self.__count_work_days(start_time_period, end_time_period)
-            round_up_period_days = period_delta.days + 1
-            return min(work_days, round_up_period_days) * time_utils.get_seconds_in_day()
-        elif period_delta.total_seconds() < 15 * 60:
-            return None
-        elif period_delta.total_seconds() < time_utils.get_seconds_in_day():
-            return period_delta.total_seconds()
-        else:
-            return time_utils.get_seconds_in_day()
-
     def _extract_user_from_changelog(self, changelog_entry):
         if self.use_user_name:
             return changelog_entry['toString']
         else:
             return changelog_entry['to']
-
-    @staticmethod
-    def __count_work_days(start_date: date, end_date: date):
-        # if the start date is on a weekend, forward the date to next Monday
-        if start_date.weekday() > WEEKDAY_FRIDAY:
-            start_date = start_date + timedelta(days=7 - start_date.weekday())
-
-        # if the end date is on a weekend, rewind the date to the previous Friday
-        if end_date.weekday() > WEEKDAY_FRIDAY:
-            end_date = end_date - timedelta(days=end_date.weekday() - WEEKDAY_FRIDAY)
-
-        if start_date > end_date:
-            return 0
-        # that makes the difference easy, no remainders etc
-        diff_days = (end_date - start_date).days + 1
-        weeks = int(diff_days / 7)
-
-        remainder = end_date.weekday() - start_date.weekday() + 1
-        if remainder != 0 and end_date.weekday() < start_date.weekday():
-            remainder = 5 + remainder
-
-        return weeks * 5 + remainder
 
     def _is_allowed_user(self, last_assigned):
         if self.user_filter is None:
