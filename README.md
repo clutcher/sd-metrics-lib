@@ -17,7 +17,7 @@ General architecture is simple and has 2 main parts:
     + **IssueProvider** interface designed to provide issues/tickets for calculators.
         + **JiraIssueProvider** implementation class, which fetches issues from Jira by JQL using jira client
           from [atlassian-python-api](https://pypi.org/project/atlassian-python-api/). Supports multithreading.
-          + **CachingJiraIssueProvider** wraps _JiraIssueProvider_ with caching.
+            + **CachingJiraIssueProvider** wraps _JiraIssueProvider_ with caching.
         + **ProxyIssueProvider** wrapper for issues fetched from another data providers.
     + **StoryPointExtractor** interface designed to extract "story points" from issue.
         + **JiraCustomFieldStoryPointExtractor** implementation class, which extract value of custom field from Jira.
@@ -28,8 +28,15 @@ General architecture is simple and has 2 main parts:
           time.
         + **JiraStatusChangeWorklogExtractor** implementation class, which uses issue status change history log to
           define user spent time on issue.
+        + **JiraResolutionTimeIssueTotalSpentTimeExtractor** implementation class, which uses creation and resolution
+          time to calculate total spent time on issue.
         + **ChainedWorklogExtractor** implementation class, which allows "chain" **WorklogExtractor** to execute them
           one by one.
+    + **WorkTimeExtractor** interface designed to extract and calculate working time from period.
+        + **SimpleWorkTimeExtractor** Simple work time calculation. For more precision calculation you can use
+          businesstimedelta.
+        + **BoundarySimpleWorkTimeExtractor** Uses SimpleWorkTimeExtractor to limit calculation time range. Useful for
+          workload calculation in some period of time, for example for "days without work" calculation.
 
 Also library provides few util classes:
 
@@ -105,6 +112,16 @@ print(velocity)
 ```
 
 ## Version history
+
+### 1.2
+
++ **(Feature)** Added BoundarySimpleWorkTimeExtractor
++ **(Improvement)** Filter unneeded changelog items for better performance
++ **(Improvement)** Add T-Shirt to story points mapping util class
++ **(Improvement)** Add helper enums
++ **(Bug Fix)** Fix bug with story points returned instead of spent time
++ **(Bug Fix)** Fix bug with missing time for active status
++ **(Bug Fix)** Fix bug with passing class instances in extractor
 
 ### 1.1.4
 
