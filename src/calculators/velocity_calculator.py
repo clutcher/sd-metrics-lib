@@ -80,7 +80,7 @@ class UserVelocityCalculator(JiraMetricsCalculator):
         return self.resolved_story_points_per_user
 
     def get_spent_time(self):
-        return self.resolved_story_points_per_user
+        return self.time_in_seconds_spent_per_user
 
     def _sum_story_points_and_worklog(self, issue_story_points, time_user_worked_on_issue):
         issue_total_spent_time = float(sum(time_user_worked_on_issue.values()))
