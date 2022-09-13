@@ -121,7 +121,7 @@ class TimeRangeGenerator:
         elif self.time_unit == VelocityTimeUnit.WEEK:
             current_day_of_week = self.period_initial_date.weekday()
             delta_with_last_day_of_week = datetime.timedelta(days=6 - current_day_of_week)
-            return self.period_initial_date - delta_with_last_day_of_week
+            return self.period_initial_date + delta_with_last_day_of_week
         elif self.time_unit == VelocityTimeUnit.MONTH:
             last_day_of_month = calendar.monthrange(self.period_initial_date.year, self.period_initial_date.month)[1]
             return self.period_initial_date.replace(day=last_day_of_month)
