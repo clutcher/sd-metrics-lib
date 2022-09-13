@@ -1,3 +1,4 @@
+import base64
 import concurrent
 import math
 from concurrent.futures import ThreadPoolExecutor, wait
@@ -101,15 +102,16 @@ class CachingJiraIssueProvider(JiraIssueProvider):
             return None
 
         # if query with same expands is already present in cache
-        cache_key = self._create_cache_key_for_query()
-        if self._is_key_in_cache(cache_key):
-            return self._get_from_cache(cache_key)
+        cache_key_without_expand = self._create_cache_key_for_query()
+        if self._is_key_in_cache(cache_key_without_expand):
+            return self._get_from_cache(cache_key_without_expand)
 
         # searching for cached responses with not less expands
         # for example we have in cache query with worklog expand and searching
         # fir same query without expands. In such case we can safely return cached results.
+        cache_key_without_expand = self._create_partial_cache_key()
         for key in self._get_all_cache_keys():
-            if key.startswith(self.query):
+            if key.startswith(cache_key_without_expand):
                 if self.expand is None:
                     return self._get_from_cache(key)
                 else:
@@ -138,5 +140,8 @@ class CachingJiraIssueProvider(JiraIssueProvider):
 
     def _create_cache_key_for_query(self):
         if self.expand is None:
-            return self.query
-        return self.query + "_" + "_".join(self.expand)
+            return self._create_partial_cache_key()
+        return self._create_partial_cache_key() + "_".join(self.expand)
+
+    def _create_partial_cache_key(self):
+        return base64.b64encode(self.query.encode("ascii")).decode("ascii") + "||"
