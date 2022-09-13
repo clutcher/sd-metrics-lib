@@ -81,10 +81,13 @@ class JiraIssueSearchQueryBuilder:
 
 class TimeRangeGenerator:
 
-    def __init__(self, time_unit: VelocityTimeUnit, number_of_ranges: int) -> None:
+    def __init__(self, time_unit: VelocityTimeUnit, number_of_ranges: int,
+                 start_time_adjuster: datetime.timedelta = None) -> None:
         self.time_unit = time_unit
         self.number_of_ranges = number_of_ranges
         self.period_initial_date = datetime.datetime.today()
+        if start_time_adjuster is not None:
+            self.period_initial_date += start_time_adjuster
 
     def __iter__(self):
         for i in range(self.number_of_ranges):
