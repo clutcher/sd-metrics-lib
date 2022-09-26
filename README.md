@@ -113,6 +113,12 @@ print(velocity)
 
 ## Version history
 
+### 1.2.1
+
++ **(Improvement)** Add possibility to adjust init time
++ **(Bug Fix)** Fix bug with wrong cache data fetching
++ **(Bug Fix)** Fix bug in week time period end date resolving
+
 ### 1.2
 
 + **(Feature)** Added BoundarySimpleWorkTimeExtractor
