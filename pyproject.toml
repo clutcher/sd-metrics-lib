@@ -1,3 +1,34 @@
 [build-system]
-requires = ['setuptools>=65.3']
+requires = ['setuptools>=77.0.0']
 build-backend = 'setuptools.build_meta'
+
+[project]
+name = "sd-metrics-lib"
+version = "1.2.1"
+description = "Library to calculate various metrics of software development process"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [
+    {name = "Igor Zarvanskyi", email = "iclutcher@gmail.com"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "python-dateutil>=2.8",
+]
+
+[project.urls]
+Homepage = "https://github.com/clutcher/sd-metrics-lib"
+"Bug Tracker" = "https://github.com/clutcher/sd-metrics-lib/issues"
+
+[project.optional-dependencies]
+jira = [
+    "atlassian-python-api>=3.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = {find = {where = ["src"]}}
