@@ -5,5 +5,5 @@ from typing import Dict
 class MetricCalculator(ABC):
 
     @abstractmethod
-    def calculate(self) -> Dict[str, float]:
+    def calculate(self):
         pass

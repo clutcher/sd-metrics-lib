@@ -2,6 +2,7 @@ import base64
 import concurrent
 import math
 from concurrent.futures import ThreadPoolExecutor, wait
+from typing import Iterable
 
 from data_providers import IssueProvider
 
@@ -11,7 +12,7 @@ class JiraIssueProvider(IssueProvider):
     def __init__(self,
                  jira_client,
                  query: str,
-                 expand: [str] = None,
+                 expand: Iterable[str] = None,
                  thread_pool_executor: ThreadPoolExecutor = None) -> None:
         self.jira_client = jira_client
         self.query = query.strip()
@@ -77,7 +78,7 @@ class CachingJiraIssueProvider(JiraIssueProvider):
     def __init__(self,
                  jira_client,
                  query: str,
-                 expand: [str] = None,
+                 expand: Iterable[str] = None,
                  thread_pool_executor: ThreadPoolExecutor = None,
                  cache=None) -> None:
         super().__init__(jira_client, query, expand, thread_pool_executor)

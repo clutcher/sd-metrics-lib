@@ -37,7 +37,7 @@ class JiraMetricsCalculator(MetricCalculator, ABC):
         pass
 
     @abstractmethod
-    def get_metric(self) -> Dict[str, float]:
+    def get_metric(self):
         pass
 
 
@@ -131,7 +131,7 @@ class GeneralizedTeamVelocityCalculator(JiraMetricsCalculator):
 
                 self._sum_story_points_and_worklog(issue_story_points, time_spent_on_issue)
 
-    def get_metric(self) -> Dict[str, float]:
+    def get_metric(self):
         return self.velocity
 
     def get_story_points(self):
