@@ -28,6 +28,10 @@ Homepage = "https://github.com/clutcher/sd-metrics-lib"
 jira = [
     "atlassian-python-api>=3.0",
 ]
+azure = [
+    "azure-devops>=7.1.0b4",
+    "msrest>=0.7",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
