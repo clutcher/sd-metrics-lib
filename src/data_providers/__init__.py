@@ -1,3 +1,3 @@
-from data_providers.issue_provider import IssueProvider
+from data_providers.issue_provider import IssueProvider, CachingIssueProvider
 from data_providers.story_point_extractor import StoryPointExtractor
 from data_providers.worklog_extractor import WorklogExtractor
