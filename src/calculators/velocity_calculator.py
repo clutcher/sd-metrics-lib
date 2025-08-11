@@ -10,7 +10,7 @@ from data_providers.utils import VelocityTimeUnit
 from data_providers.worklog_extractor import IssueTotalSpentTimeExtractor
 
 
-class JiraMetricsCalculator(MetricCalculator, ABC):
+class AbstractMetricCalculator(MetricCalculator, ABC):
 
     def __init__(self) -> None:
         self.data_fetched = False
@@ -41,7 +41,7 @@ class JiraMetricsCalculator(MetricCalculator, ABC):
         pass
 
 
-class UserVelocityCalculator(JiraMetricsCalculator):
+class UserVelocityCalculator(AbstractMetricCalculator):
 
     def __init__(self, issue_provider: IssueProvider,
                  story_point_extractor: StoryPointExtractor,
@@ -99,7 +99,7 @@ class UserVelocityCalculator(JiraMetricsCalculator):
             self.time_in_seconds_spent_per_user[user] += time_user_worked_on_issue[user]
 
 
-class GeneralizedTeamVelocityCalculator(JiraMetricsCalculator):
+class GeneralizedTeamVelocityCalculator(AbstractMetricCalculator):
 
     def __init__(self, issue_provider: IssueProvider,
                  story_point_extractor: StoryPointExtractor,
