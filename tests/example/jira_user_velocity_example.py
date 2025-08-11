@@ -14,10 +14,10 @@ CACHE = {}
 
 jira_fetch_executor = ThreadPoolExecutor(thread_name_prefix="jira-fetch")
 
-def user_velocity_integration_test(client, expand=None):
+def user_velocity_integration_test(client, additional_fields=None):
     def create_issue_provider(jira):
         jql = " type in (Story, Bug, 'Tech Debt', 'Regression Defect') AND project in ('TBC') AND resolutiondate >= 2022-06-01 "
-        jql_issue_provider = CachingJiraIssueProvider(jira, jql, expand=expand,
+        jql_issue_provider = CachingJiraIssueProvider(jira, jql, additional_fields=additional_fields,
                                                       # thread_pool_executor=jira_fetch_executor,
                                                       cache=CACHE)
         return jql_issue_provider

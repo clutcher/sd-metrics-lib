@@ -12,19 +12,20 @@ class JiraIssueProvider(IssueProvider):
     def __init__(self,
                  jira_client,
                  query: str,
-                 expand: Iterable[str] = None,
+                 additional_fields: Iterable[str] = None,
                  thread_pool_executor: ThreadPoolExecutor = None) -> None:
         self.jira_client = jira_client
         self.query = query.strip()
-        self.expand = expand
-        if expand is None:
-            self.expand_str = None
+        self.additional_fields = additional_fields
+        if additional_fields is None:
+            self._expand_str = None
         else:
-            self.expand_str = ",".join(self.expand)
+            # For Jira, additional_fields correspond to expand values (e.g., 'changelog')
+            self._expand_str = ",".join(self.additional_fields)
         self.thread_pool_executor = thread_pool_executor
 
     def get_issues(self):
-        first_page = self.jira_client.jql(self.query, expand=self.expand_str, limit=self._get_issue_fetch_amount())
+        first_page = self.jira_client.jql(self.query, expand=self._expand_str, limit=self._get_issue_fetch_amount())
         first_page_issues = first_page["issues"]
         issues_total_count = first_page["total"]
         page_len = len(first_page_issues)
@@ -48,7 +49,7 @@ class JiraIssueProvider(IssueProvider):
             next_search_start = i * page_len
             feature = self.thread_pool_executor.submit(self.jira_client.jql,
                                                        self.query,
-                                                       expand=self.expand_str,
+                                                       expand=self._expand_str,
                                                        limit=self._get_issue_fetch_amount(),
                                                        start=next_search_start)
             features.append(feature)
@@ -60,7 +61,7 @@ class JiraIssueProvider(IssueProvider):
         for i1 in range(1, amount_of_fetches):
             start = i1 * page_len
             current_page_result = self.jira_client.jql(self.query,
-                                                       expand=self.expand_str,
+                                                       expand=self._expand_str,
                                                        limit=self._get_issue_fetch_amount(),
                                                        start=start)
             current_page_issues = current_page_result["issues"]
@@ -78,10 +79,10 @@ class CachingJiraIssueProvider(JiraIssueProvider):
     def __init__(self,
                  jira_client,
                  query: str,
-                 expand: Iterable[str] = None,
+                 additional_fields: Iterable[str] = None,
                  thread_pool_executor: ThreadPoolExecutor = None,
                  cache=None) -> None:
-        super().__init__(jira_client, query, expand, thread_pool_executor)
+        super().__init__(jira_client, query, additional_fields, thread_pool_executor)
         self.cache = cache
 
     def get_issues(self):
@@ -102,25 +103,23 @@ class CachingJiraIssueProvider(JiraIssueProvider):
         if self.cache is None:
             return None
 
-        # if query with same expands is already present in cache
-        cache_key_without_expand = self._create_cache_key_for_query()
-        if self._is_key_in_cache(cache_key_without_expand):
-            return self._get_from_cache(cache_key_without_expand)
+        # if query with same additional_fields is already present in cache
+        cache_key_with_fields = self._create_cache_key_for_query()
+        if self._is_key_in_cache(cache_key_with_fields):
+            return self._get_from_cache(cache_key_with_fields)
 
-        # searching for cached responses with not less expands
-        # for example we have in cache query with worklog expand and searching
-        # fir same query without expands. In such case we can safely return cached results.
-        cache_key_without_expand = self._create_partial_cache_key()
+        # searching for cached responses with not less additional_fields (superset)
+        partial_key = self._create_partial_cache_key()
         for key in self._get_all_cache_keys():
-            if key.startswith(cache_key_without_expand):
-                if self.expand is None:
+            if key.startswith(partial_key):
+                if self.additional_fields is None:
                     return self._get_from_cache(key)
                 else:
-                    all_expands_present = True
-                    for expand in self.expand:
-                        if "_" + expand not in key:
-                            all_expands_present = False
-                    if all_expands_present:
+                    all_fields_present = True
+                    for field in self.additional_fields:
+                        if "_" + field not in key:
+                            all_fields_present = False
+                    if all_fields_present:
                         return self._get_from_cache(key)
 
         return None
@@ -140,9 +139,9 @@ class CachingJiraIssueProvider(JiraIssueProvider):
         return self.cache.keys()
 
     def _create_cache_key_for_query(self):
-        if self.expand is None:
+        if self.additional_fields is None:
             return self._create_partial_cache_key()
-        return self._create_partial_cache_key() + "_".join(self.expand)
+        return self._create_partial_cache_key() + "_".join(self.additional_fields)
 
     def _create_partial_cache_key(self):
         return base64.b64encode(self.query.encode("ascii")).decode("ascii") + "||"
