@@ -1,48 +1,105 @@
 # sd-metrics-lib
 
-Python library for calculation of various metrics related to software development process. Provides user velocity
-calculation based on data from Jira. Metrics calculation classes are using interfaces, so it could be easily extended
-with another data providers, like Trello, Asana etc. from application code.
+Python library for calculating various metrics related to the software development process. Provides developer and team velocity
+calculations based on data from Jira and Azure DevOps. Metrics calculation classes use interfaces, so the library can be easily extended
+with other data providers (e.g., Trello, Asana) from application code.
 
-## Implementation notes
+## Architecture and API reference
 
-General architecture is simple and has 2 main parts:
+### Overview
 
-+ _calculators_ package:
-    + **UserVelocityCalculator** class calculates user velocity or developer performance in other words. Requires
-      IssueProvider, StoryPointExtractor and WorklogExtractor for calculation.
-    + **GeneralizedTeamVelocityCalculator** class calculates team generalized velocity. Requires
-      IssueProvider, StoryPointExtractor and IssueTotalSpentTimeExtractor for calculation.
-+ _data_providers_ package:
-    + **IssueProvider** interface designed to provide issues/tickets for calculators.
-        + **JiraIssueProvider** implementation class, which fetches issues from Jira by JQL using jira client
-          from [atlassian-python-api](https://pypi.org/project/atlassian-python-api/). Supports multithreading.
-            + **CachingJiraIssueProvider** wraps _JiraIssueProvider_ with caching.
-        + **ProxyIssueProvider** wrapper for issues fetched from another data providers.
-    + **StoryPointExtractor** interface designed to extract "story points" from issue.
-        + **JiraCustomFieldStoryPointExtractor** implementation class, which extract value of custom field from Jira.
-        + **JiraTShirtStoryPointExtractor** implementation class, which extract value of custom field from Jira and maps
-          string value into numbers.
-    + **WorklogExtractor** interface designed to extract amount of time users spent on ticket.
-        + **JiraWorklogExtractor** implementation class, which uses regular jira work log entries to define user spent
-          time.
-        + **JiraStatusChangeWorklogExtractor** implementation class, which uses issue status change history log to
-          define user spent time on issue.
-        + **JiraResolutionTimeIssueTotalSpentTimeExtractor** implementation class, which uses creation and resolution
-          time to calculate total spent time on issue.
-        + **ChainedWorklogExtractor** implementation class, which allows "chain" **WorklogExtractor** to execute them
-          one by one.
-    + **WorkTimeExtractor** interface designed to extract and calculate working time from period.
-        + **SimpleWorkTimeExtractor** Simple work time calculation. For more precision calculation you can use
-          businesstimedelta.
-        + **BoundarySimpleWorkTimeExtractor** Uses SimpleWorkTimeExtractor to limit calculation time range. Useful for
-          workload calculation in some period of time, for example for "days without work" calculation.
+This library separates metric calculation from data sourcing. Calculators operate on abstract provider interfaces so you can plug in Jira, Azure DevOps, or your own sources. Below is a structured overview by package with links to the key classes you will use.
 
-Also library provides few util classes:
+### Calculators
 
-+ **JiraIssueSearchQueryBuilder** builder for JQL queries.
-+ **TimeRangeGenerator** generator for time ranges. Useful for filtering by resolution date to calculate velocity for
-  set of period of time.
+- Module: `calculators.metrics_calculator`
+    - `MetricCalculator` (abstract): Base interface for all metric calculators (`calculate()`).
+- Module: `calculators.velocity_calculator`
+    - `AbstractMetricCalculator` (abstract): Adds lazy extraction and shared `calculate()` workflow.
+    - `UserVelocityCalculator`: Per-user velocity (story points per time unit). Requires `IssueProvider`, `StoryPointExtractor`, `WorklogExtractor`.
+    - `GeneralizedTeamVelocityCalculator`: Team velocity (total story points per time unit). Requires `IssueProvider`, `StoryPointExtractor`, `IssueTotalSpentTimeExtractor`.
+
+### Data providers
+
+- Module: `data_providers.issue_provider`
+    - `IssueProvider` (abstract): Fetches a list of issues/work items.
+    - `ProxyIssueProvider`: Wraps a pre-fetched list of issues (useful for tests/custom sources).
+    - `CachingIssueProvider`: Caches results of any `IssueProvider`. Cache key is built from `provider.query` and `provider.additional_fields`; works with any dict-like cache (e.g., `cachetools.TTLCache`).
+- Module: `data_providers.story_point_extractor`
+    - `StoryPointExtractor` (abstract)
+    - `ConstantStoryPointExtractor`: Returns a constant number of story points.
+- Module: `data_providers.worklog_extractor`
+    - `WorklogExtractor` (abstract): Returns mapping `user -> seconds` for an issue.
+    - `IssueTotalSpentTimeExtractor` (abstract): Returns total time-in-seconds spent on an issue.
+    - `ChainedWorklogExtractor`: Tries extractors in order and returns the first non-empty result.
+- Module: `data_providers.worktime_extractor`
+    - `WorkTimeExtractor` (abstract)
+    - `SimpleWorkTimeExtractor`: Heuristic working-time calculator (caps to a day; ignores < 15 min intervals).
+    - `BoundarySimpleWorkTimeExtractor`: Limits calculation to a boundary window, then delegates to `SimpleWorkTimeExtractor`.
+- Module: `data_providers.abstract_worklog_extractor`
+    - `AbstractStatusChangeWorklogExtractor` (abstract): Derives work time from assignment/status change history; attributes time to assignee and respects optional user filters and `WorkTimeExtractor`.
+
+#### Jira
+
+- Module: `data_providers.jira.issue_provider`
+    - `JiraIssueProvider`: Fetch issues by `JQL` via `atlassian-python-api`; supports paging and optional `ThreadPoolExecutor`.
+- Module: `data_providers.jira.story_point_extractor`
+    - `JiraCustomFieldStoryPointExtractor`: Reads a numeric custom field; supports default value.
+    - `JiraTShirtStoryPointExtractor`: Maps T-shirt sizes (e.g., `S`/`M`/`L`) to numbers from a custom field.
+- Module: `data_providers.jira.worklog_extractor`
+    - `JiraWorklogExtractor`: Aggregates time from native Jira worklogs (optionally includes subtasks); optional user filter.
+    - `JiraStatusChangeWorklogExtractor`: Derives time from changelog (status/assignee changes); supports username vs `accountId` and status names vs codes; uses a `WorkTimeExtractor`.
+    - `JiraResolutionTimeIssueTotalSpentTimeExtractor`: Total time from `created` to `resolutiondate`.
+
+#### Azure DevOps
+
+- Module: `data_providers.azure.issue_provider`
+    - `AzureIssueProvider`: Executes `WIQL`; fetches work items in pages (sync or `ThreadPoolExecutor`); can expand updates for status-change-based calculations.
+- Module: `data_providers.azure.story_point_extractor`
+    - `AzureStoryPointExtractor`: Reads story points from a field (default `Microsoft.VSTS.Scheduling.StoryPoints`); robust parsing with default.
+- Module: `data_providers.azure.worklog_extractor`
+    - `AzureStatusChangeWorklogExtractor`: Derives per-user time from work item updates (assignment/state changes); supports status filters; uses `WorkTimeExtractor`.
+    - `AzureIssueTotalSpentTimeExtractor`: Total time from `System.CreatedDate` to `Microsoft.VSTS.Common.ClosedDate`.
+
+### Utilities
+
+- Module: `data_providers.utils.enums`
+    - `VelocityTimeUnit` (Enum): values `HOUR`, `DAY`, `WEEK`, `MONTH`
+    - `HealthStatus` (Enum): values `GREEN`, `YELLOW`, `RED`
+    - `SeniorityLevel` (Enum): values `JUNIOR`, `MIDDLE`, `SENIOR`
+- Module: `data_providers.utils.query_utils`
+    - `JiraIssueSearchQueryBuilder`: Builder for `JQL` (project, status, date range, type)
+    - `TimeRangeGenerator`: Iterator producing date ranges for the requested `VelocityTimeUnit`
+- Module: `data_providers.utils.story_point_utils`
+    - `TShirtMapping`: Helper to convert between T-shirt sizes (`XS`/`S`/`M`/`L`/`XL`) and story points using default mapping `xs=1`, `s=5`, `m=8`, `l=13`, `xl=21`.
+      Methods: `convert_into_points(size: str) -> int`, `convert_into_size(story_point: int) -> str`.
+- Module: `calculators.utils.time_utils`
+    - `convert_time(spent_time_in_seconds, VelocityTimeUnit) -> float`
+    - `get_seconds_in_day() -> int`
+    - Constants: `SECONDS_IN_HOUR`, `WORKING_HOURS_PER_DAY`, `WORKING_DAYS_PER_WEEK`, `WORKING_WEEKS_IN_MONTH`, `WEEKDAY_FRIDAY`
+
+### Public API exports (import shortcuts)
+
+- `calculators.__init__`: exports `UserVelocityCalculator`, `GeneralizedTeamVelocityCalculator`
+- `data_providers.__init__`: exports `IssueProvider`, `ProxyIssueProvider`, `CachingIssueProvider`, `StoryPointExtractor`, `WorklogExtractor`, `ChainedWorklogExtractor`, `IssueTotalSpentTimeExtractor`
+- `data_providers.jira.__init__`: exports `JiraIssueProvider`, `JiraCustomFieldStoryPointExtractor`, `JiraTShirtStoryPointExtractor`, `JiraWorklogExtractor`, `JiraStatusChangeWorklogExtractor`, `JiraResolutionTimeIssueTotalSpentTimeExtractor`
+- `data_providers.azure.__init__`: exports `AzureIssueProvider`, `AzureStoryPointExtractor`, `AzureStatusChangeWorklogExtractor`, `AzureIssueTotalSpentTimeExtractor`
+- `data_providers.utils.__init__`: exports `VelocityTimeUnit`, `HealthStatus`, `SeniorityLevel`, `JiraIssueSearchQueryBuilder`, `TimeRangeGenerator`, `TShirtMapping`
+
+## Installation
+
+Install core library:
+
+```bash
+pip install sd-metrics-lib
+```
+
+Optional extras for providers:
+
+```bash
+pip install sd-metrics-lib[jira]
+pip install sd-metrics-lib[azure]
+```
 
 ## Code examples
 
@@ -65,7 +122,7 @@ JIRA_PASS = 'password'
 jira_client = Jira(JIRA_SERVER, JIRA_LOGIN, JIRA_PASS, cloud=True)
 
 jql = " project in ('TBC') AND resolutiondate >= 2022-08-01 "
-jql_issue_provider = JiraIssueProvider(jira_client, jql, expand=['changelog'])
+jql_issue_provider = JiraIssueProvider(jira_client, jql, additional_fields=['changelog'])
 
 story_point_extractor = ConstantStoryPointExtractor()
 jira_worklog_extractor = JiraStatusChangeWorklogExtractor(['In Progress', 'In Development'])
@@ -78,34 +135,57 @@ velocity = velocity_calculator.calculate(velocity_time_unit=VelocityTimeUnit.DAY
 print(velocity)
 ```
 
-### Calculate amount of story points developer resolves per day based on Jira worklog.
+### Calculate amount of story points developer resolves per day based on Azure DevOps work items.
 
-This code will provide good enough dev performance metrics on projects, where worklog and story points are entered in
-Jira.
+This example uses Azure DevOps WIQL to fetch closed items and derives time spent per user from status/assignment changes.
+It also demonstrates enabling concurrency with a thread pool and caching results with a TTL cache.
 
 ```python
-from atlassian import Jira
+from cachetools import TTLCache
+from concurrent.futures import ThreadPoolExecutor
+
+from azure.devops.connection import Connection
+from msrest.authentication import BasicAuthentication
 
 from calculators import UserVelocityCalculator
 from calculators.velocity_calculator import VelocityTimeUnit
-from data_providers.jira.issue_provider import JiraIssueProvider
-from data_providers.jira.worklog_extractor import JiraWorklogExtractor
-from data_providers.jira import JiraCustomFieldStoryPointExtractor
+from data_providers.azure.issue_provider import AzureIssueProvider
+from data_providers.azure.story_point_extractor import AzureStoryPointExtractor
+from data_providers.azure.worklog_extractor import AzureStatusChangeWorklogExtractor
+from data_providers.issue_provider import CachingIssueProvider
 
-JIRA_SERVER = 'server_url'
-JIRA_LOGIN = 'login'
-JIRA_PASS = 'password'
-jira_client = Jira(JIRA_SERVER, JIRA_LOGIN, JIRA_PASS, cloud=True)
+# Caches and thread pools
+JQL_CACHE = TTLCache(maxsize=100, ttl=600)
+jira_fetch_executor = ThreadPoolExecutor(max_workers=100, thread_name_prefix="jira-fetch")
 
-jql = " project in ('TBC') AND resolutiondate >= 2022-08-01 "
-jql_issue_provider = JiraIssueProvider(jira_client, jql)
+ORGANIZATION_URL = 'https://dev.azure.com/your_org'
+PERSONAL_ACCESS_TOKEN = 'your_pat'
 
-story_point_extractor = JiraCustomFieldStoryPointExtractor('customfield_10010')
-jira_worklog_extractor = JiraWorklogExtractor(jira_client)
+credentials = BasicAuthentication('', PERSONAL_ACCESS_TOKEN)
+connection = Connection(base_url=ORGANIZATION_URL, creds=credentials)
+wit_client = connection.clients.get_work_item_tracking_client()
 
-velocity_calculator = UserVelocityCalculator(issue_provider=jql_issue_provider,
+wiql = """
+       SELECT [System.Id]
+       FROM workitems
+       WHERE
+           [System.TeamProject] = 'YourProject'
+         AND [System.State] IN ('Closed', 'Done', 'Resolved')
+         AND [System.WorkItemType] IN ('User Story', 'Bug')
+         AND [Microsoft.VSTS.Common.ClosedDate] >= '2025-08-01'
+       ORDER BY [System.ChangedDate] DESC \
+       """
+
+# Use thread pool and cache
+issue_provider = AzureIssueProvider(wit_client, query=wiql, thread_pool_executor=jira_fetch_executor)
+issue_provider = CachingIssueProvider(issue_provider, cache=JQL_CACHE)
+
+story_point_extractor = AzureStoryPointExtractor(default_story_points_value=1)
+worklog_extractor = AzureStatusChangeWorklogExtractor(transition_statuses=['In Progress'])
+
+velocity_calculator = UserVelocityCalculator(issue_provider=issue_provider,
                                              story_point_extractor=story_point_extractor,
-                                             worklog_extractor=jira_worklog_extractor)
+                                             worklog_extractor=worklog_extractor)
 velocity = velocity_calculator.calculate(velocity_time_unit=VelocityTimeUnit.DAY)
 
 print(velocity)
