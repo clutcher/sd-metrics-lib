@@ -193,6 +193,11 @@ print(velocity)
 
 ## Version history
 
+### 2.0
+
++ (Feature) Add integration with Azure DevOps
++ (Feature) Add a generic CachingIssueProvider to wrap any IssueProvider and remove CachingJiraIssueProvider
+
 ### 1.2.1
 
 + **(Improvement)** Add possibility to adjust init time
