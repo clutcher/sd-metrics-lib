@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from data_providers.story_point_extractor import StoryPointExtractor
 

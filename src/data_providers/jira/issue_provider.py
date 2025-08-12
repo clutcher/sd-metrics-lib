@@ -1,4 +1,3 @@
-import base64
 import concurrent
 import math
 from concurrent.futures import ThreadPoolExecutor, wait

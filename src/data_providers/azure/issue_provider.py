@@ -1,9 +1,8 @@
-import base64
 import math
 from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
 from typing import Iterable, List, Optional
 
-from azure.devops.v7_1.work_item_tracking.models import Wiql, TeamContext
+from azure.devops.v7_1.work_item_tracking.models import Wiql
 
 from data_providers.issue_provider import IssueProvider
 
