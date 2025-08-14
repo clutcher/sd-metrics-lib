@@ -5,10 +5,11 @@ from atlassian import Jira
 
 from calculators import UserVelocityCalculator
 from calculators.velocity_calculator import VelocityTimeUnit
-from data_providers.jira.task_provider import JiraTaskProvider
-from data_providers.task_provider import CachingTaskProvider
+from data_providers.jira.query_builder import JiraSearchQueryBuilder
 from data_providers.jira.story_point_extractor import JiraTShirtStoryPointExtractor
+from data_providers.jira.task_provider import JiraTaskProvider
 from data_providers.jira.worklog_extractor import JiraStatusChangeWorklogExtractor, JiraWorklogExtractor
+from data_providers.task_provider import CachingTaskProvider
 from data_providers.worklog_extractor import ChainedWorklogExtractor
 
 CACHE = {}
@@ -17,7 +18,12 @@ jira_fetch_executor = ThreadPoolExecutor(thread_name_prefix="jira-fetch")
 
 def user_velocity_integration_test(client, additional_fields=None):
     def create_task_provider(jira):
-        jql = " type in (Story, Bug, 'Tech Debt', 'Regression Defect') AND project in ('TBC') AND resolutiondate >= 2022-06-01 "
+        qb = JiraSearchQueryBuilder(
+            projects=['TBC'],
+            task_types=['Story', 'Bug', 'Tech Debt', 'Regression Defect'],
+            resolution_dates=(datetime.datetime(2022, 6, 1), None)
+        )
+        jql = qb.build_query()
         provider = JiraTaskProvider(jira, jql, additional_fields=additional_fields,
                                     # thread_pool_executor=jira_fetch_executor
                                     )

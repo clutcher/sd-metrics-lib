@@ -1,8 +1,8 @@
 from atlassian import Jira
 
 from calculators.velocity_calculator import VelocityTimeUnit, GeneralizedTeamVelocityCalculator
-from data_providers.jira.task_provider import JiraTaskProvider
 from data_providers.jira.story_point_extractor import JiraTShirtStoryPointExtractor
+from data_providers.jira.task_provider import JiraTaskProvider
 from data_providers.jira.worklog_extractor import JiraResolutionTimeTaskTotalSpentTimeExtractor
 
 

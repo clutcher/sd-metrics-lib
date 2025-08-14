@@ -11,24 +11,29 @@ class JiraSearchQueryBuilder:
         RESOLUTION_DATE = auto()
         LAST_MODIFIED = auto()
         TEAM = auto()
+        ORDER_BY = auto()
 
     def __init__(self,
                  projects: list[str] = None,
-                 resolution_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]] = None,
                  statuses: list[str] = None,
                  task_types: list[str] = None,
                  teams: list[str] = None,
-                 raw_queries: list[str] = None
+                 resolution_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]] = None,
+                 last_modified_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]] = None,
+                 raw_queries: list[str] = None,
+                 order_by: Optional[str] = None
                  ) -> None:
         self.query_parts = {}
         self.raw_queries: list[str] = []
 
         self.with_projects(projects)
         self.with_statuses(statuses)
-        self.for_resolution_dates(resolution_dates)
-        self.for_task_types(task_types)
+        self.with_resolution_dates(resolution_dates)
+        self.with_task_types(task_types)
         self.with_teams(teams)
+        self.with_last_modified_dates(last_modified_dates)
         self.with_raw_queries(raw_queries)
+        self.with_order_by(order_by)
 
     def with_projects(self, projects: list[str]):
         if projects is None:
@@ -42,7 +47,7 @@ class JiraSearchQueryBuilder:
         status_filter = "status in (" + self.__convert_in_jql_value_list(statuses) + ")"
         self.__add_filter(self.__QueryParts.STATUS, status_filter)
 
-    def for_resolution_dates(self, resolution_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]]):
+    def with_resolution_dates(self, resolution_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]]):
         if resolution_dates is None:
             return
         date_filter = self.__create_date_range_filter("resolutiondate",
@@ -51,7 +56,7 @@ class JiraSearchQueryBuilder:
         if date_filter:
             self.__add_filter(self.__QueryParts.RESOLUTION_DATE, date_filter)
 
-    def for_last_modified_dates(self, last_modified_datas: tuple[Optional[datetime.datetime], Optional[datetime.datetime]]):
+    def with_last_modified_dates(self, last_modified_datas: tuple[Optional[datetime.datetime], Optional[datetime.datetime]]):
         if last_modified_datas is None:
             return
         date_filter = self.__create_date_range_filter("updated",
@@ -60,7 +65,7 @@ class JiraSearchQueryBuilder:
         if date_filter:
             self.__add_filter(self.__QueryParts.LAST_MODIFIED, date_filter)
 
-    def for_task_types(self, task_types):
+    def with_task_types(self, task_types):
         if task_types is None:
             return
         task_type_filter = "issuetype in (" + self.__convert_in_jql_value_list(task_types) + ")"
@@ -80,11 +85,23 @@ class JiraSearchQueryBuilder:
             return
         self.raw_queries.extend(normalized)
 
+    def with_order_by(self, order_by: str):
+        if not order_by:
+            return
+        self.__add_filter(self.__QueryParts.ORDER_BY, order_by)
+
     def build_query(self) -> str:
-        parts = list(self.query_parts.values())
+        where_parts = [v for k, v in self.query_parts.items() if k != self.__QueryParts.ORDER_BY]
         if self.raw_queries:
-            parts.extend([q.strip() for q in self.raw_queries if q and q.strip()])
-        return ' AND '.join(parts)
+            where_parts.extend([q.strip() for q in self.raw_queries if q and q.strip()])
+        base = ' AND '.join(where_parts)
+        order_by = self.query_parts.get(self.__QueryParts.ORDER_BY)
+        if order_by:
+            if base:
+                return base + ' ORDER BY ' + order_by
+            else:
+                return 'ORDER BY ' + order_by
+        return base
 
     @staticmethod
     def __convert_in_jql_value_list(statuses):
