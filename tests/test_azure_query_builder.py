@@ -1,0 +1,64 @@
+import datetime
+import unittest
+
+from data_providers.azure.query_builder import AzureSearchQueryBuilder
+
+
+class AzureSearchQueryBuilderTestCase(unittest.TestCase):
+
+    def test_empty_builder_returns_select_statement(self):
+        # given
+        builder = AzureSearchQueryBuilder()
+        # when
+        query = builder.build_query()
+        # then
+        self.assertEqual('SELECT [System.Id] FROM workitems', query)
+
+    def test_full_query_build_with_multiple_teams_and_order_by(self):
+        # given
+        builder = AzureSearchQueryBuilder(
+            projects=['Proj1', 'Proj2'],
+            statuses=['Active', 'Closed'],
+            task_types=['User Story', 'Bug'],
+            teams=['Team A', 'Team B'],
+            resolution_dates=(datetime.date(2022, 3, 1), datetime.date(2022, 3, 31)),
+            last_modified_dates=(datetime.date(2022, 2, 1), None),
+            raw_queries=['[Custom.Field] = 1', '   ', None],
+            order_by='[System.ChangedDate] DESC'
+        )
+        # when
+        query = builder.build_query()
+        # then
+        expected = f"SELECT [System.Id] FROM workitems WHERE {(
+            "[System.TeamProject] IN ('Proj1', 'Proj2')"
+            " AND [System.State] IN ('Active', 'Closed')"
+            " AND [Microsoft.VSTS.Common.ClosedDate] >= '2022-03-01' AND [Microsoft.VSTS.Common.ClosedDate] <= '2022-03-31'"
+            " AND [System.WorkItemType] IN ('User Story', 'Bug')"
+            " AND ([System.AreaPath] UNDER 'Team A' OR [System.AreaPath] UNDER 'Team B')"
+            " AND [System.ChangedDate] >= '2022-02-01'"
+            " AND [Custom.Field] = 1"
+        )} ORDER BY [System.ChangedDate] DESC"
+        self.assertEqual(expected, query)
+
+    def test_single_team_no_parentheses(self):
+        # given
+        builder = AzureSearchQueryBuilder(
+            teams=['Team A']
+        )
+        # when
+        query = builder.build_query()
+        # then
+        expected = "SELECT [System.Id] FROM workitems WHERE [System.AreaPath] UNDER 'Team A'"
+        self.assertEqual(expected, query)
+
+    def test_order_by_only_appended(self):
+        # given
+        builder = AzureSearchQueryBuilder(order_by='[System.CreatedDate] ASC')
+        # when
+        query = builder.build_query()
+        # then
+        self.assertEqual('SELECT [System.Id] FROM workitems ORDER BY [System.CreatedDate] ASC', query)
+
+
+if __name__ == '__main__':
+    unittest.main()

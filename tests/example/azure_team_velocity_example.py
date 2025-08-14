@@ -1,29 +1,26 @@
+import datetime
+
 from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
 
 from calculators.velocity_calculator import VelocityTimeUnit, GeneralizedTeamVelocityCalculator
-from data_providers.azure.task_provider import AzureTaskProvider
+from data_providers.azure.query_builder import AzureSearchQueryBuilder
 from data_providers.azure.story_point_extractor import AzureStoryPointExtractor
+from data_providers.azure.task_provider import AzureTaskProvider
 from data_providers.azure.worklog_extractor import AzureTaskTotalSpentTimeExtractor
 
 
 def team_velocity_integration_test(wit_client):
     def create_task_provider(client):
-        query = """
-               SELECT [System.Id]
-               FROM workitems
-               WHERE
-                   [System.TeamProject] = 'Empower'
-                 AND [System.State] IN ('Closed'
-                   , 'Done'
-                   , 'Resolved')
-                 AND [System.WorkItemType] IN ('User Story'
-                   , 'Bug')
-                 AND [System.AreaPath] UNDER 'Empower\\Flow'
-                 AND [Microsoft.VSTS.Common.ClosedDate] >= '2025-08-01'
-               ORDER BY [System.ChangedDate] DESC \
-               """
-        return AzureTaskProvider(client, query=query)
+        query_builder = AzureSearchQueryBuilder(
+            projects=['Empower'],
+            statuses=['Closed', 'Done', 'Resolved'],
+            task_types=['User Story', 'Bug'],
+            teams=['Empower\\Flow'],
+            resolution_dates=(datetime.datetime(2025, 8, 1), None),
+            order_by='[System.ChangedDate] DESC'
+        )
+        return AzureTaskProvider(client, query=(query_builder.build_query()))
 
     def create_story_point_extractor():
         return AzureStoryPointExtractor(default_story_points_value=1)

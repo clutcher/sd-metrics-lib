@@ -1,3 +1,4 @@
+import datetime
 from concurrent.futures import ThreadPoolExecutor
 
 from azure.devops.connection import Connection
@@ -5,31 +6,25 @@ from msrest.authentication import BasicAuthentication
 
 from calculators import UserVelocityCalculator
 from calculators.velocity_calculator import VelocityTimeUnit
-from data_providers.azure.task_provider import AzureTaskProvider
+from data_providers.azure.query_builder import AzureSearchQueryBuilder
 from data_providers.azure.story_point_extractor import AzureStoryPointExtractor
+from data_providers.azure.task_provider import AzureTaskProvider
 from data_providers.azure.worklog_extractor import AzureStatusChangeWorklogExtractor
 from data_providers.worklog_extractor import ChainedWorklogExtractor
-
 
 thread_pool = ThreadPoolExecutor(max_workers=20, thread_name_prefix="test-fetch")
 
 def user_velocity_integration_test(wit_client):
     def create_task_provider(client):
-        wiql = """
-               SELECT [System.Id]
-               FROM workitems
-               WHERE
-                   [System.TeamProject] = 'Empower'
-                 AND [System.State] IN ('Closed'
-                   , 'Done'
-                   , 'Resolved')
-                 AND [System.WorkItemType] IN ('User Story'
-                   , 'Bug')
-                 AND [System.AreaPath] UNDER 'Empower\\Flow'
-                 AND [Microsoft.VSTS.Common.ClosedDate] >= '2025-08-01'
-               ORDER BY [System.ChangedDate] DESC \
-               """
-        return AzureTaskProvider(client, query=wiql, thread_pool_executor=thread_pool)
+        qb = AzureSearchQueryBuilder(
+            projects=['Empower'],
+            statuses=['Closed', 'Done', 'Resolved'],
+            task_types=['User Story', 'Bug'],
+            teams=['Empower\\Flow'],
+            resolution_dates=(datetime.datetime(2025, 8, 1), None),
+            order_by='[System.ChangedDate] DESC'
+        )
+        return AzureTaskProvider(client, query=(qb.build_query()), thread_pool_executor=thread_pool)
 
     def create_story_point_extractor():
         return AzureStoryPointExtractor(default_story_points_value=1)
