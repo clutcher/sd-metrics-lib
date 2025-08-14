@@ -196,6 +196,19 @@ print(velocity)
 
 ## Version history
 
+### 3.0
+
++ (Breaking) Rename all Issue* terms to Task* across API (IssueProvider -> TaskProvider, IssueTotalSpentTimeExtractor -> TaskTotalSpentTimeExtractor, etc.). Removed backward-compatibility aliases.
++ (Breaking) Change package and method names in JiraSearchQueryBuilder
+
++ (Feature) Introduce AzureSearchQueryBuilder
++ (Feature) AzureTaskProvider: make changelog history optional via additional fields
++ (Feature) Extend JiraSearchQueryBuilder: custom raw filters; filter by Team; open-ended resolution date
++ (Feature) Rewrite CachingTaskProvider to support Django caches
++ (Feature) Introduce AzureSearchQueryBuilder
++ (Bug Fix) Azure: fetch all tasks beyond 20k limit using stable pagination
++ (Bug Fix) Jira: do not fail on empty search results
+
 ### 2.0
 
 + (Feature) Add integration with Azure DevOps
