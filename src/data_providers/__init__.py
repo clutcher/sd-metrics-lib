@@ -1,3 +1,4 @@
 from .story_point_extractor import StoryPointExtractor
 from .task_provider import TaskProvider, CachingTaskProvider, ProxyTaskProvider
 from .worklog_extractor import WorklogExtractor, ChainedWorklogExtractor, TaskTotalSpentTimeExtractor
+from .worktime_extractor import SimpleWorkTimeExtractor, BoundarySimpleWorkTimeExtractor
