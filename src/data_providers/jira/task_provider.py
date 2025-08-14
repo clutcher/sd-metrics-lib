@@ -25,9 +25,12 @@ class JiraTaskProvider(TaskProvider):
 
     def get_tasks(self):
         first_page = self.jira_client.jql(self.query, expand=self._expand_str, limit=self._get_task_fetch_amount())
-        first_page_tasks = first_page["issues"]
-        tasks_total_count = first_page["total"]
+        first_page_tasks = first_page.get("issues", [])
+        tasks_total_count = first_page.get("total", len(first_page_tasks))
         page_len = len(first_page_tasks)
+
+        if tasks_total_count == 0 or page_len == 0:
+            return []
 
         tasks = []
         tasks.extend(first_page_tasks)
@@ -54,16 +57,16 @@ class JiraTaskProvider(TaskProvider):
             features.append(feature)
         done, not_done = wait(features, return_when=concurrent.futures.ALL_COMPLETED)
         for feature in done:
-            tasks.extend(feature.result()["issues"])
+            tasks.extend(feature.result().get("issues", []))
 
     def _fetch_task_sync(self, tasks, amount_of_fetches, page_len):
-        for i1 in range(1, amount_of_fetches):
-            start = i1 * page_len
+        for i in range(1, amount_of_fetches):
+            start = i * page_len
             current_page_result = self.jira_client.jql(self.query,
                                                        expand=self._expand_str,
                                                        limit=self._get_task_fetch_amount(),
                                                        start=start)
-            current_page_tasks = current_page_result["issues"]
+            current_page_tasks = current_page_result.get("issues", [])
             tasks.extend(current_page_tasks)
 
     def _get_task_fetch_amount(self):
