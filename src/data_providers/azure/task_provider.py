@@ -7,7 +7,11 @@ from azure.devops.v7_1.work_item_tracking.models import Wiql
 from data_providers.task_provider import TaskProvider
 
 
+
 class AzureTaskProvider(TaskProvider):
+
+    WIQL_RESULT_LIMIT_BEFORE_EXCEPTION_THROWING = 19999
+
     DEFAULT_FIELDS = [
         'System.Title',
         'System.WorkItemType',
@@ -28,10 +32,7 @@ class AzureTaskProvider(TaskProvider):
         self.thread_pool_executor = thread_pool_executor
 
     def get_tasks(self) -> list:
-        query = Wiql(query=self.query)
-        query_result = self.azure_client.query_by_wiql(query)
-
-        work_item_ids = [ref.id for ref in (query_result.work_items or [])]
+        work_item_ids = self._fetch_all_work_item_ids_paginated()
 
         fetched_tasks = []
         if not work_item_ids:
@@ -83,3 +84,40 @@ class AzureTaskProvider(TaskProvider):
         else:
             futures = [self.thread_pool_executor.submit(fetch_changelog_history, task) for task in tasks]
             wait(futures, return_when=ALL_COMPLETED)
+
+    def _fetch_all_work_item_ids_paginated(self) -> List[int]:
+        base_query_no_order = self._remove_custom_order_by(self.query)
+        last_id = 0
+        all_ids: List[int] = []
+        while True:
+            wiql_text = self._add_pagination_with_stable_order_by(base_query_no_order, last_id)
+            wiql = Wiql(query=wiql_text)
+            query_result = self.azure_client.query_by_wiql(wiql, top=self.WIQL_RESULT_LIMIT_BEFORE_EXCEPTION_THROWING)
+            items = query_result.work_items or []
+            if not items:
+                break
+            page_ids = [ref.id for ref in items]
+            all_ids.extend(page_ids)
+            last_id = page_ids[-1]
+            if len(page_ids) < self.WIQL_RESULT_LIMIT_BEFORE_EXCEPTION_THROWING:
+                break
+        return all_ids
+
+    @staticmethod
+    def _remove_custom_order_by(query_text: str) -> str:
+        lower = query_text.lower()
+        idx = lower.rfind(" order by ")
+        if idx == -1:
+            return query_text.strip()
+        return query_text[:idx].strip()
+
+    @staticmethod
+    def _add_pagination_with_stable_order_by(base_query_no_order: str, last_id: int) -> str:
+        lower = base_query_no_order.lower()
+        if " where " in lower:
+            paged_query = base_query_no_order + f" AND [System.Id] > {last_id}"
+
+        else:
+            paged_query = base_query_no_order + f" WHERE [System.Id] > {last_id}"
+        paged_query += " ORDER BY [System.Id] ASC"
+        return paged_query
