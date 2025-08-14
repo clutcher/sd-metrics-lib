@@ -17,15 +17,18 @@ class JiraSearchQueryBuilder:
                  resolution_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]] = None,
                  statuses: list[str] = None,
                  task_types: list[str] = None,
-                 teams: list[str] = None
+                 teams: list[str] = None,
+                 raw_queries: list[str] = None
                  ) -> None:
         self.query_parts = {}
+        self.raw_queries: list[str] = []
 
         self.with_projects(projects)
         self.with_statuses(statuses)
         self.for_resolution_dates(resolution_dates)
         self.for_task_types(task_types)
         self.with_teams(teams)
+        self.with_raw_queries(raw_queries)
 
     def with_projects(self, projects: list[str]):
         if projects is None:
@@ -69,8 +72,19 @@ class JiraSearchQueryBuilder:
         team_filter = "Team[Team] in (" + self.__convert_in_jql_value_list(teams) + ")"
         self.__add_filter(self.__QueryParts.TEAM, team_filter)
 
+    def with_raw_queries(self, raw_queries: list[str]):
+        if raw_queries is None:
+            return
+        normalized = [q.strip() for q in raw_queries if q and q.strip()]
+        if not normalized:
+            return
+        self.raw_queries.extend(normalized)
+
     def build_query(self) -> str:
-        return ' AND '.join(self.query_parts.values())
+        parts = list(self.query_parts.values())
+        if self.raw_queries:
+            parts.extend([q.strip() for q in self.raw_queries if q and q.strip()])
+        return ' AND '.join(parts)
 
     @staticmethod
     def __convert_in_jql_value_list(statuses):
