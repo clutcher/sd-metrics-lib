@@ -12,7 +12,8 @@ class AzureTaskProvider(TaskProvider):
 
     WIQL_RESULT_LIMIT_BEFORE_EXCEPTION_THROWING = 19999
 
-    DEFAULT_FIELDS = [
+    WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME = 'CustomExpand.WorkItemUpdate'
+    AZURE_DEFAULT_FIELDS = [
         'System.Title',
         'System.WorkItemType',
         'System.State',
@@ -20,8 +21,10 @@ class AzureTaskProvider(TaskProvider):
         'System.AssignedTo',
 
         'Microsoft.VSTS.Scheduling.StoryPoints',
-        'Microsoft.VSTS.Common.ClosedDate',
+        'Microsoft.VSTS.Common.ClosedDate'
     ]
+
+    DEFAULT_FIELDS = AZURE_DEFAULT_FIELDS + [WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME]
 
     def __init__(self, azure_client, query: str, additional_fields: Optional[Iterable[str]] = None,
                  page_size: int = 200, thread_pool_executor: Optional[ThreadPoolExecutor] = None) -> None:
@@ -46,7 +49,8 @@ class AzureTaskProvider(TaskProvider):
         else:
             fetched_tasks = self._fetch_task_concurrently(work_item_ids, total_batches, total_ids)
 
-        self._attach_changelog_history(fetched_tasks)
+        if self.WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME in self.additional_fields:
+            self._attach_changelog_history(fetched_tasks)
         return fetched_tasks
 
     def _fetch_task_sync(self, work_item_ids: List[int], total_batches: int, total_ids: int) -> List:
@@ -76,7 +80,7 @@ class AzureTaskProvider(TaskProvider):
     def _attach_changelog_history(self, tasks: List[object]):
 
         def fetch_changelog_history(task):
-            task.fields['CustomExpand.WorkItemUpdate'] = self.azure_client.get_updates(task.id)
+            task.fields[self.WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME] = self.azure_client.get_updates(task.id)
 
         if self.thread_pool_executor is None:
             for task in tasks:
