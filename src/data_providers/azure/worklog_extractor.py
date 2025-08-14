@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 
 from data_providers.abstract_worklog_extractor import AbstractStatusChangeWorklogExtractor
-from data_providers.worklog_extractor import IssueTotalSpentTimeExtractor
+from data_providers.worklog_extractor import TaskTotalSpentTimeExtractor
 from data_providers.worktime_extractor import WorkTimeExtractor, SimpleWorkTimeExtractor
 
 
@@ -20,8 +20,8 @@ class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
         self.time_format = time_format
         self.use_user_name = use_user_name
 
-    def _extract_chronological_changes_sequence(self, issue):
-        fields = issue.fields
+    def _extract_chronological_changes_sequence(self, task):
+        fields = task.fields
         return fields.get('CustomExpand.WorkItemUpdate') or []
 
     def _is_user_change_entry(self, changelog_entry: dict) -> bool:
@@ -53,26 +53,26 @@ class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
             return True
         return changelog_entry.fields['System.State'].old_value in self.transition_statuses
 
-    def _is_current_status_a_required_status(self, issue) -> bool:
+    def _is_current_status_a_required_status(self, task) -> bool:
         if self.transition_statuses is None:
             return True
-        fields = issue.get('fields', {}) if isinstance(issue, dict) else {}
+        fields = task.get('fields', {}) if isinstance(task, dict) else {}
         current = fields.get('System.State')
         return current in self.transition_statuses
 
 
-class AzureIssueTotalSpentTimeExtractor(IssueTotalSpentTimeExtractor):
+class AzureTaskTotalSpentTimeExtractor(TaskTotalSpentTimeExtractor):
 
     def __init__(self, time_format='%Y-%m-%dT%H:%M:%S.%f%z') -> None:
         self.time_format = time_format
 
-    def get_total_spent_time(self, issue) -> int:
-        resolution_date_str = issue.fields['Microsoft.VSTS.Common.ClosedDate']
+    def get_total_spent_time(self, task) -> int:
+        resolution_date_str = task.fields['Microsoft.VSTS.Common.ClosedDate']
         if resolution_date_str is None:
             return 0
 
         resolution_date = self._convert_to_time(resolution_date_str)
-        creation_date = self._convert_to_time(issue.fields['System.CreatedDate'])
+        creation_date = self._convert_to_time(task.fields['System.CreatedDate'])
         spent_time = (resolution_date - creation_date)
         return int(spent_time.total_seconds())
 

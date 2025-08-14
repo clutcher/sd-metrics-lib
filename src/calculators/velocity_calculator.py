@@ -4,10 +4,10 @@ from typing import Dict
 from calculators.metrics_calculator import MetricCalculator
 from calculators.utils import time_utils
 from data_providers import WorklogExtractor
-from data_providers.issue_provider import IssueProvider
 from data_providers.story_point_extractor import StoryPointExtractor
+from data_providers.task_provider import TaskProvider
 from data_providers.utils import VelocityTimeUnit
-from data_providers.worklog_extractor import IssueTotalSpentTimeExtractor
+from data_providers.worklog_extractor import TaskTotalSpentTimeExtractor
 
 
 class AbstractMetricCalculator(MetricCalculator, ABC):
@@ -17,7 +17,7 @@ class AbstractMetricCalculator(MetricCalculator, ABC):
 
     def calculate(self, velocity_time_unit=VelocityTimeUnit.DAY) -> Dict[str, float]:
         if not self.is_data_fetched():
-            self._extract_data_from_issues()
+            self._extract_data_from_tasks()
             self.mark_data_fetched()
         self._calculate_metric(velocity_time_unit)
         return self.get_metric()
@@ -26,14 +26,14 @@ class AbstractMetricCalculator(MetricCalculator, ABC):
         self.data_fetched = True
 
     def is_data_fetched(self):
-        return self.is_data_fetched is True
+        return self.data_fetched is True
 
     @abstractmethod
     def _calculate_metric(self, time_unit: VelocityTimeUnit):
         pass
 
     @abstractmethod
-    def _extract_data_from_issues(self):
+    def _extract_data_from_tasks(self):
         pass
 
     @abstractmethod
@@ -43,11 +43,11 @@ class AbstractMetricCalculator(MetricCalculator, ABC):
 
 class UserVelocityCalculator(AbstractMetricCalculator):
 
-    def __init__(self, issue_provider: IssueProvider,
+    def __init__(self, task_provider: TaskProvider,
                  story_point_extractor: StoryPointExtractor,
                  worklog_extractor: WorklogExtractor) -> None:
         super().__init__()
-        self.issue_provider = issue_provider
+        self.task_provider = task_provider
         self.story_point_extractor = story_point_extractor
         self.worklog_extractor = worklog_extractor
 
@@ -64,14 +64,14 @@ class UserVelocityCalculator(AbstractMetricCalculator):
                 if developer_velocity != 0:
                     self.velocity_per_user[user] = developer_velocity
 
-    def _extract_data_from_issues(self):
-        issues = self.issue_provider.get_issues()
-        for issue in issues:
-            issue_story_points = self.story_point_extractor.get_story_points(issue)
-            if issue_story_points is not None and issue_story_points > 0:
-                time_user_worked_on_issue = self.worklog_extractor.get_work_time_per_user(issue)
+    def _extract_data_from_tasks(self):
+        tasks = self.task_provider.get_tasks()
+        for task in tasks:
+            task_story_points = self.story_point_extractor.get_story_points(task)
+            if task_story_points is not None and task_story_points > 0:
+                time_user_worked_on_task = self.worklog_extractor.get_work_time_per_user(task)
 
-                self._sum_story_points_and_worklog(issue_story_points, time_user_worked_on_issue)
+                self._sum_story_points_and_worklog(task_story_points, time_user_worked_on_task)
 
     def get_metric(self):
         return self.velocity_per_user
@@ -82,34 +82,34 @@ class UserVelocityCalculator(AbstractMetricCalculator):
     def get_spent_time(self):
         return self.time_in_seconds_spent_per_user
 
-    def _sum_story_points_and_worklog(self, issue_story_points, time_user_worked_on_issue):
-        issue_total_spent_time = float(sum(time_user_worked_on_issue.values()))
-        if issue_total_spent_time == 0:
+    def _sum_story_points_and_worklog(self, task_story_points, time_user_worked_on_task):
+        task_total_spent_time = float(sum(time_user_worked_on_task.values()))
+        if task_total_spent_time == 0:
             return
 
-        for user in time_user_worked_on_issue.keys():
+        for user in time_user_worked_on_task.keys():
             if user not in self.resolved_story_points_per_user:
                 self.resolved_story_points_per_user[user] = 0.
             if user not in self.time_in_seconds_spent_per_user:
                 self.time_in_seconds_spent_per_user[user] = 0
 
-        for user in time_user_worked_on_issue.keys():
-            story_point_ratio = time_user_worked_on_issue[user] / issue_total_spent_time
-            self.resolved_story_points_per_user[user] += issue_story_points * story_point_ratio
-            self.time_in_seconds_spent_per_user[user] += time_user_worked_on_issue[user]
+        for user in time_user_worked_on_task.keys():
+            story_point_ratio = time_user_worked_on_task[user] / task_total_spent_time
+            self.resolved_story_points_per_user[user] += task_story_points * story_point_ratio
+            self.time_in_seconds_spent_per_user[user] += time_user_worked_on_task[user]
 
 
 class GeneralizedTeamVelocityCalculator(AbstractMetricCalculator):
 
-    def __init__(self, issue_provider: IssueProvider,
+    def __init__(self, task_provider: TaskProvider,
                  story_point_extractor: StoryPointExtractor,
-                 time_extractor: IssueTotalSpentTimeExtractor) -> None:
+                 time_extractor: TaskTotalSpentTimeExtractor) -> None:
         super().__init__()
         self.total_resolved_story_points = 0
         self.total_spent_time_in_seconds = 0
         self.velocity = None
 
-        self.issue_provider = issue_provider
+        self.task_provider = task_provider
         self.story_point_extractor = story_point_extractor
         self.time_extractor = time_extractor
 
@@ -122,14 +122,14 @@ class GeneralizedTeamVelocityCalculator(AbstractMetricCalculator):
         else:
             self.velocity = story_points / spent_time
 
-    def _extract_data_from_issues(self):
-        issues = self.issue_provider.get_issues()
-        for issue in issues:
-            issue_story_points = self.story_point_extractor.get_story_points(issue)
-            if issue_story_points is not None and issue_story_points > 0:
-                time_spent_on_issue = self.time_extractor.get_total_spent_time(issue)
+    def _extract_data_from_tasks(self):
+        tasks = self.task_provider.get_tasks()
+        for task in tasks:
+            task_story_points = self.story_point_extractor.get_story_points(task)
+            if task_story_points is not None and task_story_points > 0:
+                time_spent_on_task = self.time_extractor.get_total_spent_time(task)
 
-                self._sum_story_points_and_worklog(issue_story_points, time_spent_on_issue)
+                self._sum_story_points_and_worklog(task_story_points, time_spent_on_task)
 
     def get_metric(self):
         return self.velocity
@@ -140,9 +140,9 @@ class GeneralizedTeamVelocityCalculator(AbstractMetricCalculator):
     def get_spent_time(self):
         return self.total_spent_time_in_seconds
 
-    def _sum_story_points_and_worklog(self, issue_story_points: float, issue_total_spent_time: int):
-        if issue_total_spent_time == 0:
+    def _sum_story_points_and_worklog(self, task_story_points: float, task_total_spent_time: int):
+        if task_total_spent_time == 0:
             return
 
-        self.total_resolved_story_points += issue_story_points
-        self.total_spent_time_in_seconds += issue_total_spent_time
+        self.total_resolved_story_points += task_story_points
+        self.total_spent_time_in_seconds += task_total_spent_time

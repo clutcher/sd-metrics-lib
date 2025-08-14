@@ -1,44 +1,44 @@
 import unittest
 
 from calculators import UserVelocityCalculator
-from data_providers.issue_provider import ProxyIssueProvider
 from data_providers.jira import JiraCustomFieldStoryPointExtractor, JiraStatusChangeWorklogExtractor
+from data_providers.task_provider import ProxyTaskProvider
 
 TEST_USER = 'test_user'
 
 
 class VelocityCalculatorTestCase(unittest.TestCase):
 
-    def test_should_not_fail_on_empty_jira_issue(self):
+    def test_should_not_fail_on_empty_jira_task(self):
         # given
-        empty_issue = {}
-        jql_issue_provider = ProxyIssueProvider([empty_issue])
+        empty_task = {}
+        task_provider = ProxyTaskProvider([empty_task])
         t_shirt_story_point_extractor = JiraCustomFieldStoryPointExtractor('customfield_00000')
         jira_worklog_extractor = JiraStatusChangeWorklogExtractor(['12207'],
                                                                   time_format='%Y-%m-%dT%H:%M:%S.%f%z')
         # when
-        self.velocity_calculator = UserVelocityCalculator(issue_provider=jql_issue_provider,
+        self.velocity_calculator = UserVelocityCalculator(task_provider=task_provider,
                                                           story_point_extractor=t_shirt_story_point_extractor,
                                                           worklog_extractor=jira_worklog_extractor)
 
         velocity = self.velocity_calculator.calculate()
 
         # then
-        self.assertEqual(0, len(velocity.keys()), 'Empty issue must not provide any velocity data')
+        self.assertEqual(0, len(velocity.keys()), 'Empty task must not provide any velocity data')
 
     def test_should_calculate_velocity_for_one_worklog(self):
         # given
         histories = self.__create_history_entries_with_status_change()
-        issue = self.__create_issue_with_log_data(histories)
+        task = self.__create_task_with_log_data(histories)
 
-        jql_issue_provider = ProxyIssueProvider([issue])
+        task_provider = ProxyTaskProvider([task])
         t_shirt_story_point_extractor = JiraCustomFieldStoryPointExtractor('customfield_00000')
         jira_worklog_extractor = JiraStatusChangeWorklogExtractor(['12207'],
                                                                   time_format='%Y-%m-%dT%H:%M:%S.%f%z',
                                                                   use_status_codes=True)
 
         # when
-        self.velocity_calculator = UserVelocityCalculator(issue_provider=jql_issue_provider,
+        self.velocity_calculator = UserVelocityCalculator(task_provider=task_provider,
                                                           story_point_extractor=t_shirt_story_point_extractor,
                                                           worklog_extractor=jira_worklog_extractor)
 
@@ -52,16 +52,16 @@ class VelocityCalculatorTestCase(unittest.TestCase):
         # given
         histories = self.__create_history_entries_with_status_change()
         histories.extend(self.__create_history_entries_with_status_change())
-        issue = self.__create_issue_with_log_data(histories)
+        task = self.__create_task_with_log_data(histories)
 
-        jql_issue_provider = ProxyIssueProvider([issue])
+        task_provider = ProxyTaskProvider([task])
         t_shirt_story_point_extractor = JiraCustomFieldStoryPointExtractor('customfield_00000')
         jira_worklog_extractor = JiraStatusChangeWorklogExtractor(['12207'],
                                                                   time_format='%Y-%m-%dT%H:%M:%S.%f%z',
                                                                   use_status_codes=True)
 
         # when
-        self.velocity_calculator = UserVelocityCalculator(issue_provider=jql_issue_provider,
+        self.velocity_calculator = UserVelocityCalculator(task_provider=task_provider,
                                                           story_point_extractor=t_shirt_story_point_extractor,
                                                           worklog_extractor=jira_worklog_extractor)
 
@@ -71,19 +71,19 @@ class VelocityCalculatorTestCase(unittest.TestCase):
         self.assertEqual(1, len(velocity.keys()), 'Missing calculated velocity data')
         self.assertEqual(12, velocity[TEST_USER], 'Must be calculated velocity for test user')
 
-    def test_should_calculate_velocity_for_few_issues(self):
+    def test_should_calculate_velocity_for_few_tasks(self):
         # given
-        issue = self.__create_issue_with_log_data(self.__create_history_entries_with_status_change())
-        issue2 = self.__create_issue_with_log_data(self.__create_history_entries_with_status_change(), story_points=2)
+        task = self.__create_task_with_log_data(self.__create_history_entries_with_status_change())
+        task2 = self.__create_task_with_log_data(self.__create_history_entries_with_status_change(), story_points=2)
 
-        jql_issue_provider = ProxyIssueProvider([issue, issue2])
+        task_provider = ProxyTaskProvider([task, task2])
         t_shirt_story_point_extractor = JiraCustomFieldStoryPointExtractor('customfield_00000')
         jira_worklog_extractor = JiraStatusChangeWorklogExtractor(['12207'],
                                                                   time_format='%Y-%m-%dT%H:%M:%S.%f%z',
                                                                   use_status_codes=True)
 
         # when
-        self.velocity_calculator = UserVelocityCalculator(issue_provider=jql_issue_provider,
+        self.velocity_calculator = UserVelocityCalculator(task_provider=task_provider,
                                                           story_point_extractor=t_shirt_story_point_extractor,
                                                           worklog_extractor=jira_worklog_extractor)
 
@@ -93,13 +93,13 @@ class VelocityCalculatorTestCase(unittest.TestCase):
         self.assertEqual(1, len(velocity.keys()), 'Missing calculated velocity data')
         self.assertEqual(20, velocity[TEST_USER], 'Must be calculated velocity for test user')
 
-    def __create_issue_with_log_data(self, histories, story_points=3):
-        issue = {}
-        issue['fields'] = {}
-        issue['fields']['customfield_00000'] = story_points
-        issue['changelog'] = {}
-        issue['changelog']['histories'] = histories
-        return issue
+    def __create_task_with_log_data(self, histories, story_points=3):
+        task = {}
+        task['fields'] = {}
+        task['fields']['customfield_00000'] = story_points
+        task['changelog'] = {}
+        task['changelog']['histories'] = histories
+        return task
 
     def __create_history_entries_with_status_change(self):
         end_date_history_entry_item = self.__create_status_change_history_entry_item(to_status='1',

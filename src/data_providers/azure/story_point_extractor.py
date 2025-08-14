@@ -10,8 +10,8 @@ class AzureStoryPointExtractor(StoryPointExtractor):
         self.field_name = field_name
         self.default_value = default_story_points_value
 
-    def get_story_points(self, issue) -> float | None:
-        value = self._extract_field_value(issue)
+    def get_story_points(self, task) -> float | None:
+        value = self._extract_field_value(task)
         if isinstance(value, (int, float)):
             return float(value)
         if value is None:
@@ -21,5 +21,5 @@ class AzureStoryPointExtractor(StoryPointExtractor):
         except Exception:
             return self.default_value
 
-    def _extract_field_value(self, issue):
-        return issue.fields.get(self.field_name)
+    def _extract_field_value(self, task):
+        return task.fields.get(self.field_name)

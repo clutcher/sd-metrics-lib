@@ -7,7 +7,7 @@ from dateutil.relativedelta import relativedelta
 from data_providers.utils import VelocityTimeUnit
 
 
-class JiraIssueSearchQueryBuilder:
+class JiraSearchQueryBuilder:
     class __QueryParts(Enum):
         PROJECT = auto()
         TYPE = auto()
@@ -19,14 +19,14 @@ class JiraIssueSearchQueryBuilder:
                  projects: list[str] = None,
                  resolution_dates: tuple[datetime.datetime, datetime.datetime] = None,
                  statuses: list[str] = None,
-                 issue_types: list[str] = None
+                 task_types: list[str] = None
                  ) -> None:
         self.query_parts = {}
 
         self.with_projects(projects)
         self.with_statuses(statuses)
         self.for_resolution_dates(resolution_dates)
-        self.for_issue_types(issue_types)
+        self.for_task_types(task_types)
 
     def with_projects(self, projects: list[str]):
         if projects is None:
@@ -56,11 +56,11 @@ class JiraIssueSearchQueryBuilder:
                                                       last_modified_datas[1])
         self.__add_filter(self.__QueryParts.LAST_MODIFIED, date_filter)
 
-    def for_issue_types(self, issue_types):
-        if issue_types is None:
+    def for_task_types(self, task_types):
+        if task_types is None:
             return
-        issue_type_filter = "issuetype in (" + self.__convert_in_jql_value_list(issue_types) + ")"
-        self.__add_filter(self.__QueryParts.TYPE, issue_type_filter)
+        task_type_filter = "issuetype in (" + self.__convert_in_jql_value_list(task_types) + ")"
+        self.__add_filter(self.__QueryParts.TYPE, task_type_filter)
 
     def build_query(self) -> str:
         return ' AND '.join(self.query_parts.values())

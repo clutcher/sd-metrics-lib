@@ -19,10 +19,10 @@ class AbstractStatusChangeWorklogExtractor(WorklogExtractor, ABC):
         self.interval_start_time: Optional[datetime] = None
         self.interval_end_time: Optional[datetime] = None
 
-    def get_work_time_per_user(self, issue) -> Dict[str, int]:
+    def get_work_time_per_user(self, task) -> Dict[str, int]:
         working_time_per_user: Dict[str, int] = {}
 
-        changelog_history = list(self._extract_chronological_changes_sequence(issue))
+        changelog_history = list(self._extract_chronological_changes_sequence(task))
         if not changelog_history:
             return working_time_per_user
 
@@ -42,14 +42,14 @@ class AbstractStatusChangeWorklogExtractor(WorklogExtractor, ABC):
                         self.interval_end_time = change_time
                 self.__sum_working_time(working_time_per_user, last_assigned_user)
 
-        if self._is_current_status_a_required_status(issue):
+        if self._is_current_status_a_required_status(task):
             self.interval_end_time = self._now()
             self.__sum_working_time(working_time_per_user, last_assigned_user)
 
         return working_time_per_user
 
     @abstractmethod
-    def _extract_chronological_changes_sequence(self, issue) -> Iterable[dict]:
+    def _extract_chronological_changes_sequence(self, task) -> Iterable[dict]:
         pass
 
     @abstractmethod
@@ -77,7 +77,7 @@ class AbstractStatusChangeWorklogExtractor(WorklogExtractor, ABC):
         pass
 
     @abstractmethod
-    def _is_current_status_a_required_status(self, issue) -> bool:
+    def _is_current_status_a_required_status(self, task) -> bool:
         pass
 
     @staticmethod

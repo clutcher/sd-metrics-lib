@@ -2,13 +2,13 @@ from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
 
 from calculators.velocity_calculator import VelocityTimeUnit, GeneralizedTeamVelocityCalculator
-from data_providers.azure.issue_provider import AzureIssueProvider
+from data_providers.azure.task_provider import AzureTaskProvider
 from data_providers.azure.story_point_extractor import AzureStoryPointExtractor
-from data_providers.azure.worklog_extractor import AzureIssueTotalSpentTimeExtractor
+from data_providers.azure.worklog_extractor import AzureTaskTotalSpentTimeExtractor
 
 
 def team_velocity_integration_test(wit_client):
-    def create_issue_provider(client):
+    def create_task_provider(client):
         query = """
                SELECT [System.Id]
                FROM workitems
@@ -23,21 +23,21 @@ def team_velocity_integration_test(wit_client):
                  AND [Microsoft.VSTS.Common.ClosedDate] >= '2025-08-01'
                ORDER BY [System.ChangedDate] DESC \
                """
-        return AzureIssueProvider(client, query=query)
+        return AzureTaskProvider(client, query=query)
 
     def create_story_point_extractor():
         return AzureStoryPointExtractor(default_story_points_value=1)
 
     def create_time_extractor():
-        return AzureIssueTotalSpentTimeExtractor()
+        return AzureTaskTotalSpentTimeExtractor()
 
     # given
-    issue_provider = create_issue_provider(wit_client)
+    task_provider = create_task_provider(wit_client)
     story_point_extractor = create_story_point_extractor()
     time_extractor = create_time_extractor()
 
     # when
-    velocity_calculator = GeneralizedTeamVelocityCalculator(issue_provider=issue_provider,
+    velocity_calculator = GeneralizedTeamVelocityCalculator(task_provider=task_provider,
                                                             story_point_extractor=story_point_extractor,
                                                             time_extractor=time_extractor)
 

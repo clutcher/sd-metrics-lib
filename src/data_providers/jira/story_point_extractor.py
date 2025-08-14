@@ -9,8 +9,8 @@ class JiraCustomFieldStoryPointExtractor(StoryPointExtractor):
         self.custom_field_name = custom_field_name
         self.default_value = default_story_points_value
 
-    def get_story_points(self, issue) -> float | None:
-        story_points = self._extract_field_value(issue)
+    def get_story_points(self, task) -> float | None:
+        story_points = self._extract_field_value(task)
 
         if isinstance(story_points, int) or isinstance(story_points, float):
             return story_points
@@ -21,9 +21,9 @@ class JiraCustomFieldStoryPointExtractor(StoryPointExtractor):
 
         return self.default_value
 
-    def _extract_field_value(self, issue):
+    def _extract_field_value(self, task):
         try:
-            return issue['fields'][self.custom_field_name]
+            return task['fields'][self.custom_field_name]
         except:
             return None
 
@@ -34,8 +34,8 @@ class JiraTShirtStoryPointExtractor(JiraCustomFieldStoryPointExtractor):
         super().__init__(custom_field_name, default_story_points_value)
         self.story_point_mapping = story_point_mapping
 
-    def get_story_points(self, issue) -> float | None:
-        story_points = self._extract_field_value(issue)
+    def get_story_points(self, task) -> float | None:
+        story_points = self._extract_field_value(task)
         if isinstance(story_points, int) or isinstance(story_points, float):
             return story_points
         if story_points is None:

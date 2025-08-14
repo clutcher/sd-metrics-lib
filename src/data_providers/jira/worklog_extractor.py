@@ -2,7 +2,7 @@ from datetime import datetime
 
 from data_providers import WorklogExtractor
 from data_providers.abstract_worklog_extractor import AbstractStatusChangeWorklogExtractor
-from data_providers.worklog_extractor import IssueTotalSpentTimeExtractor
+from data_providers.worklog_extractor import TaskTotalSpentTimeExtractor
 from data_providers.worktime_extractor import SimpleWorkTimeExtractor, WorkTimeExtractor
 
 
@@ -13,8 +13,8 @@ class JiraWorklogExtractor(WorklogExtractor):
         self.user_filter = user_filter
         self.include_subtask_worklog = include_subtask_worklog
 
-    def get_work_time_per_user(self, issue):
-        worklogs = self._get_worklog_for_issue_with_subtasks(issue)
+    def get_work_time_per_user(self, task):
+        worklogs = self._get_worklog_for_task_with_subtasks(task)
 
         working_time_per_user = {}
         for worklog in worklogs:
@@ -26,20 +26,20 @@ class JiraWorklogExtractor(WorklogExtractor):
 
         return working_time_per_user
 
-    def _get_worklog_for_issue_with_subtasks(self, issue):
+    def _get_worklog_for_task_with_subtasks(self, task):
         worklogs = []
-        worklogs.extend(self._get_worklogs_from_jira(issue['key']))
+        worklogs.extend(self._get_worklogs_from_jira(task['key']))
         if self.include_subtask_worklog:
             try:
-                sub_task_keys = [subtask["key"] for subtask in issue["fields"]["subtasks"]]
+                sub_task_keys = [subtask["key"] for subtask in task["fields"]["subtasks"]]
                 for subtask in sub_task_keys:
                     worklogs.extend(self._get_worklogs_from_jira(subtask))
             except AttributeError:
                 pass
         return worklogs
 
-    def _get_worklogs_from_jira(self, issue_key: str):
-        data = self.jira_client.issue_get_worklog(issue_key)
+    def _get_worklogs_from_jira(self, task_key: str):
+        data = self.jira_client.issue_get_worklog(task_key)
         if 'worklogs' in data:
             return data['worklogs']
         return data
@@ -78,14 +78,14 @@ class JiraStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
         self.use_user_name = use_user_name
         self.use_status_codes = use_status_codes
 
-    def _extract_chronological_changes_sequence(self, issue):
-        if not isinstance(issue, dict):
+    def _extract_chronological_changes_sequence(self, task):
+        if not isinstance(task, dict):
             return []
-        if 'changelog' not in issue or 'histories' not in issue['changelog']:
+        if 'changelog' not in task or 'histories' not in task['changelog']:
             return []
 
         changelog_history = []
-        changelog = issue['changelog']['histories']
+        changelog = task['changelog']['histories']
         for history_entry in changelog:
             if 'items' not in history_entry:
                 continue
@@ -128,28 +128,29 @@ class JiraStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
         else:
             return changelog_entry['fromString'] in self.transition_statuses
 
-    def _is_current_status_a_required_status(self, issue):
+    def _is_current_status_a_required_status(self, task):
         if self.transition_statuses is None:
             return True
-        if 'fields' not in issue or 'status' not in issue['fields']:
+        if 'fields' not in task or 'status' not in task['fields']:
             return False
         if self.use_status_codes:
-            return issue['fields']['status']['id'] in self.transition_statuses in self.transition_statuses
+            return task['fields']['status']['id'] in self.transition_statuses
         else:
-            return issue['fields']['status']['name'] in self.transition_statuses
+            return task['fields']['status']['name'] in self.transition_statuses
 
 
-class JiraResolutionTimeIssueTotalSpentTimeExtractor(IssueTotalSpentTimeExtractor):
+class JiraResolutionTimeTaskTotalSpentTimeExtractor(TaskTotalSpentTimeExtractor):
 
     def __init__(self, time_format='%Y-%m-%dT%H:%M:%S.%f%z') -> None:
         self.time_format = time_format
 
-    def get_total_spent_time(self, issue) -> int:
-        resolution_date_str = issue['fields']['resolutiondate']
+    def get_total_spent_time(self, task) -> int:
+        resolution_date_str = task['fields']['resolutiondate']
         if resolution_date_str is None:
             return 0
 
         resolution_date = datetime.strptime(resolution_date_str, self.time_format)
-        creation_date = datetime.strptime(issue['fields']['created'], self.time_format)
+        creation_date = datetime.strptime(task['fields']['created'], self.time_format)
         spent_time = (resolution_date - creation_date)
         return int(spent_time.total_seconds())
+

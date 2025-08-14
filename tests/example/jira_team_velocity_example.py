@@ -1,16 +1,15 @@
 from atlassian import Jira
 
 from calculators.velocity_calculator import VelocityTimeUnit, GeneralizedTeamVelocityCalculator
-from data_providers.jira.issue_provider import JiraIssueProvider
+from data_providers.jira.task_provider import JiraTaskProvider
 from data_providers.jira.story_point_extractor import JiraTShirtStoryPointExtractor
-from data_providers.jira.worklog_extractor import JiraResolutionTimeIssueTotalSpentTimeExtractor
+from data_providers.jira.worklog_extractor import JiraResolutionTimeTaskTotalSpentTimeExtractor
 
 
 def team_velocity_integration_test(client):
-    def create_issue_provider(jira):
+    def create_task_provider(jira):
         jql = " type in (Story, Bug, 'Tech Debt', 'Regression Defect') AND project in ('TBC') AND resolutiondate >= 2022-05-01 "
-        jql_issue_provider = JiraIssueProvider(jira, jql, additional_fields=['changelog'])
-        return jql_issue_provider
+        return JiraTaskProvider(jira, jql, additional_fields=['changelog'])
 
     def create_story_point_extractor():
         tshirt_mapping = {
@@ -26,15 +25,15 @@ def team_velocity_integration_test(client):
         return t_shirt_story_point_extractor
 
     def create_time_extractor():
-        return JiraResolutionTimeIssueTotalSpentTimeExtractor()
+        return JiraResolutionTimeTaskTotalSpentTimeExtractor()
 
     # given
-    jql_issue_provider = create_issue_provider(client)
+    task_provider = create_task_provider(client)
     t_shirt_story_point_extractor = create_story_point_extractor()
     time_extractor = create_time_extractor()
 
     # when
-    velocity_calculator = GeneralizedTeamVelocityCalculator(issue_provider=jql_issue_provider,
+    velocity_calculator = GeneralizedTeamVelocityCalculator(task_provider=task_provider,
                                                             story_point_extractor=t_shirt_story_point_extractor,
                                                             time_extractor=time_extractor)
 
