@@ -10,12 +10,14 @@ class JiraSearchQueryBuilder:
         STATUS = auto()
         RESOLUTION_DATE = auto()
         LAST_MODIFIED = auto()
+        TEAM = auto()
 
     def __init__(self,
                  projects: list[str] = None,
                  resolution_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]] = None,
                  statuses: list[str] = None,
-                 task_types: list[str] = None
+                 task_types: list[str] = None,
+                 teams: list[str] = None
                  ) -> None:
         self.query_parts = {}
 
@@ -23,6 +25,7 @@ class JiraSearchQueryBuilder:
         self.with_statuses(statuses)
         self.for_resolution_dates(resolution_dates)
         self.for_task_types(task_types)
+        self.with_teams(teams)
 
     def with_projects(self, projects: list[str]):
         if projects is None:
@@ -59,6 +62,12 @@ class JiraSearchQueryBuilder:
             return
         task_type_filter = "issuetype in (" + self.__convert_in_jql_value_list(task_types) + ")"
         self.__add_filter(self.__QueryParts.TYPE, task_type_filter)
+
+    def with_teams(self, teams: list[str]):
+        if teams is None:
+            return
+        team_filter = "Team[Team] in (" + self.__convert_in_jql_value_list(teams) + ")"
+        self.__add_filter(self.__QueryParts.TEAM, team_filter)
 
     def build_query(self) -> str:
         return ' AND '.join(self.query_parts.values())
