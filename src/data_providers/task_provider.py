@@ -1,6 +1,14 @@
-import base64
 from abc import abstractmethod, ABC
-from typing import Optional
+from typing import Optional, List, Tuple, Set, Iterable
+from typing import Union
+
+from .utils.cache_support import (
+    DictProtocol,
+    CacheProtocol,
+    DictToCacheProtocolAdapter,
+    CacheKeyBuilder,
+    SupersetResolver
+)
 
 
 class TaskProvider(ABC):
@@ -21,67 +29,97 @@ class ProxyTaskProvider(TaskProvider):
 
 class CachingTaskProvider(TaskProvider):
 
-    def __init__(self, provider: TaskProvider, cache: Optional[dict] = None) -> None:
-        self.cache = cache
+    def __init__(self, provider: TaskProvider,
+                 cache: Optional[Union[DictProtocol, CacheProtocol]] = None) -> None:
+        if cache is not None and isinstance(cache, DictProtocol):
+            self.cache: Optional[CacheProtocol] = DictToCacheProtocolAdapter(cache)
+        else:
+            self.cache = cache  # type: ignore[assignment]
 
         self.provider = provider
         self.query = getattr(provider, 'query', None)
         self.additional_fields = getattr(provider, 'additional_fields', None)
 
     def get_tasks(self):
-        cached_tasks = self._search_in_cache()
-        if cached_tasks is not None:
-            return cached_tasks
-
+        cached = self._try_fetch_from_cache()
+        if cached is not None:
+            return cached
         tasks = self.provider.get_tasks()
-        self._set_in_cache(tasks)
+        self._store_in_cache(tasks)
         return tasks
 
-    def _search_in_cache(self):
+    def _try_fetch_from_cache(self):
         if self.cache is None:
             return None
 
-        # if query with same additional_fields is already present in cache
-        cache_key_with_fields = self._create_cache_key_for_query()
-        if self._is_key_in_cache(cache_key_with_fields):
-            return self._get_from_cache(cache_key_with_fields)
+        exact = self._fetch_exact_cache_hit()
+        if exact is not None:
+            return exact
 
-        # searching for cached responses with not less additional_fields (superset)
-        partial_key = self._create_partial_cache_key()
-        for key in self._get_all_cache_keys():
-            if key.startswith(partial_key):
-                if self.additional_fields is None:
-                    return self._get_from_cache(key)
-                else:
-                    all_fields_present = True
-                    for field in self.additional_fields:
-                        if "_" + field not in key:
-                            all_fields_present = False
-                    if all_fields_present:
-                        return self._get_from_cache(key)
+        superset = self._fetch_superset_cache_hit()
+        if superset is not None:
+            return superset
 
         return None
 
-    def _get_from_cache(self, cache_key):
-        return self.cache.get(cache_key)
-
-    def _set_in_cache(self, tasks):
+    def _store_in_cache(self, tasks):
         if self.cache is None:
             return
-        self.cache[self._create_cache_key_for_query()] = tasks
+        normalized_fields = CacheKeyBuilder.normalize_fields(self.additional_fields)
+        self._store_tasks_under_data_key(tasks, normalized_fields)
+        self._ensure_fieldset_list_updated(normalized_fields)
 
-    def _is_key_in_cache(self, cache_key):
-        return cache_key in self.cache
+    def _fetch_exact_cache_hit(self):
+        partial_key = CacheKeyBuilder.create_query_only_key_partial(self.query)
+        data_key = CacheKeyBuilder.create_full_data_key(partial_key,
+                                                        CacheKeyBuilder.normalize_fields(self.additional_fields))
+        hit = self.cache.get(data_key)  # type: ignore[union-attr]
+        if hit is not None:
+            return hit
+        return None
 
-    def _get_all_cache_keys(self):
-        return self.cache.keys()
+    def _fetch_superset_cache_hit(self):
+        requested_fields = CacheKeyBuilder.normalize_fields(self.additional_fields)
+        meta_key = CacheKeyBuilder.create_meta_data_key(CacheKeyBuilder.create_query_only_key_partial(self.query))
+        available_fieldsets = self._load_cached_fieldsets(meta_key)
+        compatible_available_fieldset = SupersetResolver.find_superset_fieldset(requested_fields, available_fieldsets)
+        if compatible_available_fieldset is not None:
+            superset_data_key = CacheKeyBuilder.create_full_data_key(
+                CacheKeyBuilder.create_query_only_key_partial(self.query),
+                compatible_available_fieldset)
+            superset_value = self.cache.get(superset_data_key)  # type: ignore[union-attr]
+            if superset_value is not None:
+                return superset_value
+        return None
 
-    def _create_cache_key_for_query(self):
-        if self.additional_fields is None:
-            return self._create_partial_cache_key()
-        return self._create_partial_cache_key() + "_".join(self.additional_fields)
+    def _store_tasks_under_data_key(self, tasks, fields: Iterable[str]):
+        partial_key = CacheKeyBuilder.create_query_only_key_partial(self.query)
+        data_key = CacheKeyBuilder.create_full_data_key(partial_key, fields)
+        self.cache.set(data_key, tasks)  # type: ignore[union-attr]
 
-    def _create_partial_cache_key(self):
-        if self.query is None:
-            return "none_query||"
-        return base64.b64encode(self.query.encode("ascii")).decode("ascii") + "||"
+    def _ensure_fieldset_list_updated(self, fields: Iterable[str]):
+        meta_key = self._create_meta_key_for_query()
+        fieldsets = self._load_cached_fieldsets(meta_key)
+        fieldset_tuple = tuple(fields)
+        if fieldset_tuple not in fieldsets:
+            fieldsets.add(fieldset_tuple)
+            self._save_cached_fieldsets(meta_key, fieldsets)
+
+    def _create_meta_key_for_query(self) -> str:
+        return CacheKeyBuilder.create_meta_data_key(CacheKeyBuilder.create_query_only_key_partial(self.query))
+
+    def _load_cached_fieldsets(self, meta_key: str) -> Set[Tuple[str, ...]]:
+        raw = self.cache.get(meta_key)  # type: ignore[union-attr]
+        if raw is None:
+            return set()
+        result: Set[Tuple[str, ...]] = set()
+        try:
+            for fieldset in raw:
+                result.add(tuple(fieldset))
+        except Exception:
+            return set()
+        return result
+
+    def _save_cached_fieldsets(self, meta_key: str, fieldsets: Set[Tuple[str, ...]]):
+        serializable: List[List[str]] = [list(t) for t in fieldsets]
+        self.cache.set(meta_key, serializable)  # type: ignore[union-attr]
