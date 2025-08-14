@@ -43,6 +43,8 @@ This library separates metric calculation from data sourcing. Calculators operat
 
 - Module: `data_providers.jira.task_provider`
     - `JiraTaskProvider`: Fetch tasks by `JQL` via `atlassian-python-api`; supports paging and optional `ThreadPoolExecutor`.
+- Module: `data_providers.jira.query_builder`
+    - `JiraSearchQueryBuilder`: Builder for `JQL` (project, status, date range, type, team, custom raw filters, order by)
 - Module: `data_providers.jira.story_point_extractor`
     - `JiraCustomFieldStoryPointExtractor`: Reads a numeric custom field; supports default value.
     - `JiraTShirtStoryPointExtractor`: Maps T-shirt sizes (e.g., `S`/`M`/`L`) to numbers from a custom field.
@@ -55,6 +57,8 @@ This library separates metric calculation from data sourcing. Calculators operat
 
 - Module: `data_providers.azure.task_provider`
     - `AzureTaskProvider`: Executes `WIQL`; fetches work items in pages (sync or `ThreadPoolExecutor`); can expand updates for status-change-based calculations.
+- Module: `data_providers.azure.query_builder`
+    - `AzureSearchQueryBuilder`: Builder for WIQL (project, status, date range, type, area path/team, custom raw filters, order by)
 - Module: `data_providers.azure.story_point_extractor`
     - `AzureStoryPointExtractor`: Reads story points from a field (default `Microsoft.VSTS.Scheduling.StoryPoints`); robust parsing with default.
 - Module: `data_providers.azure.worklog_extractor`
@@ -68,7 +72,6 @@ This library separates metric calculation from data sourcing. Calculators operat
     - `HealthStatus` (Enum): values `GREEN`, `YELLOW`, `RED`
     - `SeniorityLevel` (Enum): values `JUNIOR`, `MIDDLE`, `SENIOR`
 - Module: `data_providers.utils.query_utils`
-    - `JiraSearchQueryBuilder`: Builder for `JQL` (project, status, date range, type)
     - `TimeRangeGenerator`: Iterator producing date ranges for the requested `VelocityTimeUnit`
 - Module: `data_providers.utils.story_point_utils`
     - `TShirtMapping`: Helper to convert between T-shirt sizes (`XS`/`S`/`M`/`L`/`XL`) and story points using default mapping `xs=1`, `s=5`, `m=8`, `l=13`, `xl=21`.
@@ -81,10 +84,10 @@ This library separates metric calculation from data sourcing. Calculators operat
 ### Public API exports (import shortcuts)
 
 - `calculators.__init__`: exports `UserVelocityCalculator`, `GeneralizedTeamVelocityCalculator`
-- `data_providers.__init__`: exports `TaskProvider`, `ProxyTaskProvider`, `CachingTaskProvider`, `StoryPointExtractor`, `WorklogExtractor`, `ChainedWorklogExtractor`, `TaskTotalSpentTimeExtractor`
-- `data_providers.jira.__init__`: exports `JiraTaskProvider`, `JiraCustomFieldStoryPointExtractor`, `JiraTShirtStoryPointExtractor`, `JiraWorklogExtractor`, `JiraStatusChangeWorklogExtractor`, `JiraResolutionTimeTaskTotalSpentTimeExtractor`
-- `data_providers.azure.__init__`: exports `AzureTaskProvider`, `AzureStoryPointExtractor`, `AzureStatusChangeWorklogExtractor`, `AzureTaskTotalSpentTimeExtractor`
-- `data_providers.utils.__init__`: exports `VelocityTimeUnit`, `HealthStatus`, `SeniorityLevel`, `JiraSearchQueryBuilder`, `TimeRangeGenerator`, `TShirtMapping`
+- `data_providers.__init__`: exports `TaskProvider`, `ProxyTaskProvider`, `CachingTaskProvider`, `StoryPointExtractor`, `WorklogExtractor`, `ChainedWorklogExtractor`, `TaskTotalSpentTimeExtractor`, `SimpleWorkTimeExtractor`, `BoundarySimpleWorkTimeExtractor`
+- `data_providers.jira.__init__`: exports `JiraSearchQueryBuilder`, `JiraTaskProvider`, `JiraCustomFieldStoryPointExtractor`, `JiraTShirtStoryPointExtractor`, `JiraWorklogExtractor`, `JiraStatusChangeWorklogExtractor`, `JiraResolutionTimeTaskTotalSpentTimeExtractor`
+- `data_providers.azure.__init__`: exports `AzureSearchQueryBuilder`, `AzureTaskProvider`, `AzureStoryPointExtractor`, `AzureStatusChangeWorklogExtractor`, `AzureTaskTotalSpentTimeExtractor`
+- `data_providers.utils.__init__`: exports `VelocityTimeUnit`, `HealthStatus`, `SeniorityLevel`, `TimeRangeGenerator`, `TShirtMapping`
 
 ## Installation
 
@@ -111,7 +114,7 @@ This code should work on any project and give at least some data for analysis.
 from atlassian import Jira
 
 from calculators import UserVelocityCalculator
-from calculators.velocity_calculator import VelocityTimeUnit
+from data_providers.utils import VelocityTimeUnit
 from data_providers.jira.task_provider import JiraTaskProvider
 from data_providers.jira.worklog_extractor import JiraStatusChangeWorklogExtractor
 from data_providers.story_point_extractor import ConstantStoryPointExtractor
@@ -148,7 +151,7 @@ from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
 
 from calculators import UserVelocityCalculator
-from calculators.velocity_calculator import VelocityTimeUnit
+from data_providers.utils import VelocityTimeUnit
 from data_providers.azure.task_provider import AzureTaskProvider
 from data_providers.azure.story_point_extractor import AzureStoryPointExtractor
 from data_providers.azure.worklog_extractor import AzureStatusChangeWorklogExtractor
