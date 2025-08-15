@@ -14,6 +14,15 @@ class AzureSearchQueryBuilderTestCase(unittest.TestCase):
         # then
         self.assertEqual('SELECT [System.Id] FROM workitems', query)
 
+    def test_task_ids_only(self):
+        # given
+        builder = AzureSearchQueryBuilder(task_ids=[1, 2, 3])
+        # when
+        query = builder.build_query()
+        # then
+        expected = "SELECT [System.Id] FROM workitems WHERE [System.Id] IN (1, 2, 3)"
+        self.assertEqual(expected, query)
+
     def test_full_query_build_with_multiple_teams_and_order_by(self):
         # given
         builder = AzureSearchQueryBuilder(

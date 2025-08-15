@@ -11,6 +11,7 @@ class JiraSearchQueryBuilder:
         RESOLUTION_DATE = auto()
         LAST_MODIFIED = auto()
         TEAM = auto()
+        TASK_IDS = auto()
         ORDER_BY = auto()
 
     def __init__(self,
@@ -20,6 +21,7 @@ class JiraSearchQueryBuilder:
                  teams: list[str] = None,
                  resolution_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]] = None,
                  last_modified_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]] = None,
+                 task_ids: list[int] = None,
                  raw_queries: list[str] = None,
                  order_by: Optional[str] = None
                  ) -> None:
@@ -32,6 +34,7 @@ class JiraSearchQueryBuilder:
         self.with_task_types(task_types)
         self.with_teams(teams)
         self.with_last_modified_dates(last_modified_dates)
+        self.with_task_ids(task_ids)
         self.with_raw_queries(raw_queries)
         self.with_order_by(order_by)
 
@@ -70,6 +73,15 @@ class JiraSearchQueryBuilder:
             return
         task_type_filter = "issuetype in (" + self.__convert_in_jql_value_list(task_types) + ")"
         self.__add_filter(self.__QueryParts.TYPE, task_type_filter)
+
+    def with_task_ids(self, task_ids: list[int]):
+        if task_ids is None:
+            return
+        normalized = [str(int(i)) for i in task_ids if i is not None and str(i).strip()]
+        if not normalized:
+            return
+        ids_filter = "key in (" + ", ".join(normalized) + ")"
+        self.__add_filter(self.__QueryParts.TASK_IDS, ids_filter)
 
     def with_teams(self, teams: list[str]):
         if teams is None:
