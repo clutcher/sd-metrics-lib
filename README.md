@@ -198,6 +198,12 @@ print(velocity)
 
 ## Version history
 
+### 4.0
+
++ (Breaking) Fix circular module import issue
+
++ (Feature) Add filtering by task ids in Azure and Jira query builders
+
 ### 3.0
 
 + (Breaking) Rename all Issue* terms to Task* across API (IssueProvider -> TaskProvider, IssueTotalSpentTimeExtractor -> TaskTotalSpentTimeExtractor, etc.). Removed backward-compatibility aliases.
