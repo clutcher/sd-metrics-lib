@@ -1,8 +1,7 @@
 import datetime
 from abc import ABC, abstractmethod
 
-from calculators.utils import time_utils
-from calculators.utils.time_utils import WEEKDAY_FRIDAY
+from common import WEEKDAY_FRIDAY, get_seconds_in_day
 
 
 class WorkTimeExtractor(ABC):
@@ -23,13 +22,13 @@ class SimpleWorkTimeExtractor(WorkTimeExtractor):
         if period_delta.days > 0:
             work_days = self.__count_work_days(start_time_period, end_time_period)
             round_up_period_days = period_delta.days + 1
-            return min(work_days, round_up_period_days) * time_utils.get_seconds_in_day()
+            return min(work_days, round_up_period_days) * get_seconds_in_day()
         elif period_delta.total_seconds() < 15 * 60:
             return None
-        elif period_delta.total_seconds() < time_utils.get_seconds_in_day():
+        elif period_delta.total_seconds() < get_seconds_in_day():
             return int(period_delta.total_seconds())
         else:
-            return time_utils.get_seconds_in_day()
+            return get_seconds_in_day()
 
     @staticmethod
     def __count_work_days(start_date: datetime.date, end_date: datetime.date):

@@ -67,27 +67,29 @@ This library separates metric calculation from data sourcing. Calculators operat
 
 ### Utilities
 
-- Module: `data_providers.utils.enums`
+- Module: `common.enums`
     - `VelocityTimeUnit` (Enum): values `HOUR`, `DAY`, `WEEK`, `MONTH`
     - `HealthStatus` (Enum): values `GREEN`, `YELLOW`, `RED`
     - `SeniorityLevel` (Enum): values `JUNIOR`, `MIDDLE`, `SENIOR`
-- Module: `data_providers.utils.query_utils`
-    - `TimeRangeGenerator`: Iterator producing date ranges for the requested `VelocityTimeUnit`
-- Module: `data_providers.utils.story_point_utils`
+- Module: `common.story_point_utils`
     - `TShirtMapping`: Helper to convert between T-shirt sizes (`XS`/`S`/`M`/`L`/`XL`) and story points using default mapping `xs=1`, `s=5`, `m=8`, `l=13`, `xl=21`.
       Methods: `convert_into_points(size: str) -> int`, `convert_into_size(story_point: int) -> str`.
+- Module: `common.time_constants`
+    - Constants: `SECONDS_IN_HOUR`, `WORKING_HOURS_PER_DAY`, `WORKING_DAYS_PER_WEEK`, `WORKING_WEEKS_IN_MONTH`, `WEEKDAY_FRIDAY`
+    - `get_seconds_in_day() -> int`
+- Module: `data_providers.utils.query_utils`
+    - `TimeRangeGenerator`: Iterator producing date ranges for the requested `VelocityTimeUnit`
 - Module: `calculators.utils.time_utils`
     - `convert_time(spent_time_in_seconds, VelocityTimeUnit) -> float`
-    - `get_seconds_in_day() -> int`
-    - Constants: `SECONDS_IN_HOUR`, `WORKING_HOURS_PER_DAY`, `WORKING_DAYS_PER_WEEK`, `WORKING_WEEKS_IN_MONTH`, `WEEKDAY_FRIDAY`
+    - `get_seconds_in_day() -> int` (delegates to `common.get_seconds_in_day`)
 
 ### Public API exports (import shortcuts)
 
+- `common.__init__`: exports `VelocityTimeUnit`, `HealthStatus`, `SeniorityLevel`, `TShirtMapping`, `SECONDS_IN_HOUR`, `WORKING_HOURS_PER_DAY`, `WORKING_DAYS_PER_WEEK`, `WORKING_WEEKS_IN_MONTH`, `WEEKDAY_FRIDAY`, `get_seconds_in_day`
 - `calculators.__init__`: exports `UserVelocityCalculator`, `GeneralizedTeamVelocityCalculator`
 - `data_providers.__init__`: exports `TaskProvider`, `ProxyTaskProvider`, `CachingTaskProvider`, `StoryPointExtractor`, `WorklogExtractor`, `ChainedWorklogExtractor`, `TaskTotalSpentTimeExtractor`, `SimpleWorkTimeExtractor`, `BoundarySimpleWorkTimeExtractor`
 - `data_providers.jira.__init__`: exports `JiraSearchQueryBuilder`, `JiraTaskProvider`, `JiraCustomFieldStoryPointExtractor`, `JiraTShirtStoryPointExtractor`, `JiraWorklogExtractor`, `JiraStatusChangeWorklogExtractor`, `JiraResolutionTimeTaskTotalSpentTimeExtractor`
 - `data_providers.azure.__init__`: exports `AzureSearchQueryBuilder`, `AzureTaskProvider`, `AzureStoryPointExtractor`, `AzureStatusChangeWorklogExtractor`, `AzureTaskTotalSpentTimeExtractor`
-- `data_providers.utils.__init__`: exports `VelocityTimeUnit`, `HealthStatus`, `SeniorityLevel`, `TimeRangeGenerator`, `TShirtMapping`
 
 ## Installation
 
@@ -114,7 +116,7 @@ This code should work on any project and give at least some data for analysis.
 from atlassian import Jira
 
 from calculators import UserVelocityCalculator
-from data_providers.utils import VelocityTimeUnit
+from common import VelocityTimeUnit
 from data_providers.jira.task_provider import JiraTaskProvider
 from data_providers.jira.worklog_extractor import JiraStatusChangeWorklogExtractor
 from data_providers.story_point_extractor import ConstantStoryPointExtractor
@@ -151,7 +153,7 @@ from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
 
 from calculators import UserVelocityCalculator
-from data_providers.utils import VelocityTimeUnit
+from common import VelocityTimeUnit
 from data_providers.azure.task_provider import AzureTaskProvider
 from data_providers.azure.story_point_extractor import AzureStoryPointExtractor
 from data_providers.azure.worklog_extractor import AzureStatusChangeWorklogExtractor

@@ -3,11 +3,10 @@ from typing import Dict
 
 from calculators.metrics_calculator import MetricCalculator
 from calculators.utils import time_utils
-from data_providers import WorklogExtractor
+from common import VelocityTimeUnit
 from data_providers.story_point_extractor import StoryPointExtractor
 from data_providers.task_provider import TaskProvider
-from data_providers.utils import VelocityTimeUnit
-from data_providers.worklog_extractor import TaskTotalSpentTimeExtractor
+from data_providers.worklog_extractor import WorklogExtractor, TaskTotalSpentTimeExtractor
 
 
 class AbstractMetricCalculator(MetricCalculator, ABC):

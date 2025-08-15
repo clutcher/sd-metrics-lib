@@ -7,7 +7,6 @@ from azure.devops.v7_1.work_item_tracking.models import Wiql
 from data_providers.task_provider import TaskProvider
 
 
-
 class AzureTaskProvider(TaskProvider):
 
     WIQL_RESULT_LIMIT_BEFORE_EXCEPTION_THROWING = 19999

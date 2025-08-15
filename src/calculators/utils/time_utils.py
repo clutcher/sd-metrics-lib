@@ -1,11 +1,10 @@
-from data_providers.utils import VelocityTimeUnit
-
-SECONDS_IN_HOUR = 3600
-WORKING_HOURS_PER_DAY = 8
-WORKING_DAYS_PER_WEEK = 5
-WORKING_WEEKS_IN_MONTH = 4
-
-WEEKDAY_FRIDAY = 4  # date.weekday() starts with 0
+from common import (
+    VelocityTimeUnit,
+    SECONDS_IN_HOUR,
+    WORKING_HOURS_PER_DAY,
+    WORKING_DAYS_PER_WEEK,
+    WORKING_WEEKS_IN_MONTH,
+)
 
 
 def convert_time(spent_time_in_seconds: int, time_unit: VelocityTimeUnit):
@@ -23,5 +22,3 @@ def convert_time(spent_time_in_seconds: int, time_unit: VelocityTimeUnit):
         return spent_time_in_seconds
 
 
-def get_seconds_in_day():
-    return WORKING_HOURS_PER_DAY * SECONDS_IN_HOUR
