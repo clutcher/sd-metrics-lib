@@ -16,7 +16,7 @@ class JiraSearchQueryBuilderTestCase(unittest.TestCase):
 
     def test_task_ids_only(self):
         # given
-        builder = JiraSearchQueryBuilder(task_ids=[101, 202, 303])
+        builder = JiraSearchQueryBuilder(task_ids=['101', '202', '303'])
         # when
         query = builder.build_query()
         # then
@@ -68,7 +68,7 @@ class JiraSearchQueryBuilderTestCase(unittest.TestCase):
             teams=['Team A', 'Team B'],
             resolution_dates=(datetime.date(2022, 1, 1), datetime.date(2022, 1, 31)),
             last_modified_dates=(None, datetime.date(2022, 2, 1)),
-            task_ids=[11, 22],
+            task_ids=['11', '22'],
             raw_queries=['assignee = currentUser()', 'priority = High'],
             order_by='updated DESC'
         )

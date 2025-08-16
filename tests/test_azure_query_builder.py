@@ -16,7 +16,7 @@ class AzureSearchQueryBuilderTestCase(unittest.TestCase):
 
     def test_task_ids_only(self):
         # given
-        builder = AzureSearchQueryBuilder(task_ids=[1, 2, 3])
+        builder = AzureSearchQueryBuilder(task_ids=['1', '2', '3'])
         # when
         query = builder.build_query()
         # then
