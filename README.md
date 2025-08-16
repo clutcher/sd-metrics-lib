@@ -227,6 +227,10 @@ print(velocity)
 
 ## Version history
 
+### 5.0.1
+
++ (Bug Fix) Fix bad import in utils module
+
 ### 5.0
 
 + (Breaking) Restructure packages and rename files for better import Developer Experience.
