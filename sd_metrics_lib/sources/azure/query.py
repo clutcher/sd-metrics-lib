@@ -21,7 +21,7 @@ class AzureSearchQueryBuilder:
                  teams: list[str] = None,
                  resolution_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]] = None,
                  last_modified_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]] = None,
-                 task_ids: list[int] = None,
+                 task_ids: list[str] = None,
                  raw_queries: list[str] = None,
                  order_by: Optional[str] = None
                  ) -> None:
@@ -59,7 +59,8 @@ class AzureSearchQueryBuilder:
         if date_filter:
             self.__add_filter(self.__QueryParts.RESOLUTION_DATE, date_filter)
 
-    def with_last_modified_dates(self, last_modified_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]]):
+    def with_last_modified_dates(self,
+                                 last_modified_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]]):
         if not last_modified_dates:
             return
         date_filter = self.__create_date_range_filter("[System.ChangedDate]",
@@ -74,13 +75,10 @@ class AzureSearchQueryBuilder:
         task_type_filter = "[System.WorkItemType] IN (" + self.__convert_in_wiql_value_list(task_types) + ")"
         self.__add_filter(self.__QueryParts.TYPE, task_type_filter)
 
-    def with_task_ids(self, task_ids: list[int]):
+    def with_task_ids(self, task_ids: list[str]):
         if not task_ids:
             return
-        normalized = [str(int(i)) for i in task_ids if i is not None and str(i).strip()]
-        if not normalized:
-            return
-        ids_filter = "[System.Id] IN (" + ", ".join(normalized) + ")"
+        ids_filter = "[System.Id] IN (" + ", ".join(task_ids) + ")"
         self.__add_filter(self.__QueryParts.TASK_IDS, ids_filter)
 
     def with_teams(self, teams: list[str]):
