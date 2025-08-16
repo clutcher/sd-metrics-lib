@@ -24,5 +24,3 @@ def convert_time(spent_time_in_seconds: int, time_unit: VelocityTimeUnit):
         return spent_time_in_seconds / SECONDS_IN_HOUR / WORKING_HOURS_PER_DAY / WORKING_DAYS_PER_WEEK
     elif time_unit == VelocityTimeUnit.MONTH:
         return spent_time_in_seconds / SECONDS_IN_HOUR / WORKING_HOURS_PER_DAY / WORKING_DAYS_PER_WEEK / WORKING_WEEKS_IN_MONTH
-    else:
-        return spent_time_in_seconds

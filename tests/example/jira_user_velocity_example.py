@@ -37,13 +37,12 @@ def user_velocity_integration_test(client, additional_fields=None):
             'l': 12,
             'xl': 21
         }
-        t_shirt_story_point_extractor = JiraTShirtStoryPointExtractor('customfield_10010',
-                                                                      tshirt_mapping,
-                                                                      default_story_points_value=1)
-        return t_shirt_story_point_extractor
+        return JiraTShirtStoryPointExtractor('customfield_10010',
+                                             tshirt_mapping,
+                                             default_story_points_value=1)
 
-    def create_worklog_extractor(client):
-        jira_worklog_extractor = JiraWorklogExtractor(client)
+    def create_worklog_extractor(jira_client):
+        jira_worklog_extractor = JiraWorklogExtractor(jira_client)
         jira_status_worklog_extractor = JiraStatusChangeWorklogExtractor(['12207', '3'], use_user_name=True)
         return ChainedWorklogExtractor([jira_worklog_extractor, jira_status_worklog_extractor])
 

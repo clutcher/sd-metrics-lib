@@ -24,3 +24,4 @@ class TShirtMapping:
             return 'L'
         elif story_point <= 21:
             return 'XL'
+        return 'XXL'

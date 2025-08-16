@@ -20,10 +20,9 @@ def team_velocity_integration_test(client):
             'l': 12,
             'xl': 21
         }
-        t_shirt_story_point_extractor = JiraTShirtStoryPointExtractor('customfield_10010',
-                                                                      tshirt_mapping,
-                                                                      default_story_points_value=1)
-        return t_shirt_story_point_extractor
+        return JiraTShirtStoryPointExtractor('customfield_10010',
+                                             tshirt_mapping,
+                                             default_story_points_value=1)
 
     def create_time_extractor():
         return JiraResolutionTimeTaskTotalSpentTimeExtractor()

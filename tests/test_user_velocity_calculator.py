@@ -94,7 +94,8 @@ class VelocityCalculatorTestCase(unittest.TestCase):
         self.assertEqual(1, len(velocity.keys()), 'Missing calculated velocity data')
         self.assertEqual(20, velocity[TEST_USER], 'Must be calculated velocity for test user')
 
-    def __create_task_with_log_data(self, histories, story_points=3):
+    @staticmethod
+    def __create_task_with_log_data(histories, story_points=3):
         task = {}
         task['fields'] = {}
         task['fields']['customfield_00000'] = story_points

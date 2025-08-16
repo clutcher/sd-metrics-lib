@@ -78,8 +78,8 @@ class AzureTaskProvider(TaskProvider):
 
     def _attach_changelog_history(self, tasks: List[object]):
 
-        def fetch_changelog_history(task):
-            task.fields[self.WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME] = self.azure_client.get_updates(task.id)
+        def fetch_changelog_history(item):
+            item.fields[self.WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME] = self.azure_client.get_updates(item.id)
 
         if self.thread_pool_executor is None:
             for task in tasks:
