@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Callable, Optional
+from typing import Dict, Callable, Optional, TypeVar
 
 from sd_metrics_lib.utils.attributes import get_attribute_by_path
+
+T = TypeVar('T')
 
 
 class WorklogExtractor(ABC):
@@ -33,10 +35,10 @@ class ChainedWorklogExtractor(WorklogExtractor):
 
 class FunctionWorklogExtractor(WorklogExtractor):
 
-    def __init__(self, func: Callable[[object], Optional[Dict[str, int]]]):
+    def __init__(self, func: Callable[[T], Optional[Dict[str, int]]]):
         self.func = func
 
-    def get_work_time_per_user(self, task) -> Dict[str, int]:
+    def get_work_time_per_user(self, task: T) -> Dict[str, int]:
         result = self.func(task)
         try:
             return {str(k): int(v) for k, v in (result or {}).items()}
@@ -46,10 +48,10 @@ class FunctionWorklogExtractor(WorklogExtractor):
 
 class FunctionTotalSpentTimeExtractor(TaskTotalSpentTimeExtractor):
 
-    def __init__(self, func: Callable[[object], Optional[int]]):
+    def __init__(self, func: Callable[[T], Optional[int]]):
         self.func = func
 
-    def get_total_spent_time(self, task) -> int:
+    def get_total_spent_time(self, task: T) -> int:
         result = self.func(task)
         try:
             return int(result) if result is not None else 0

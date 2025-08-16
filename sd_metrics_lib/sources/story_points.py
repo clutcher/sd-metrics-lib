@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Optional
+from typing import Callable, Optional, TypeVar
 
 from sd_metrics_lib.utils.attributes import get_attribute_by_path
+
+T = TypeVar('T')
 
 
 class StoryPointExtractor(ABC):
@@ -22,10 +24,10 @@ class ConstantStoryPointExtractor(StoryPointExtractor):
 
 class FunctionStoryPointExtractor(StoryPointExtractor):
 
-    def __init__(self, func: Callable[[object], Optional[float]]):
+    def __init__(self, func: Callable[[T], Optional[float]]):
         self.func = func
 
-    def get_story_points(self, task) -> float | None:
+    def get_story_points(self, task: T) -> float | None:
         return self.func(task)
 
 
