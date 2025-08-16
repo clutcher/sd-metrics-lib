@@ -12,7 +12,7 @@ class AzureTaskProvider(TaskProvider):
     WIQL_RESULT_LIMIT_BEFORE_EXCEPTION_THROWING = 19999
 
     WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME = 'CustomExpand.WorkItemUpdate'
-    AZURE_DEFAULT_FIELDS = [
+    DEFAULT_FIELDS = [
         'System.Title',
         'System.WorkItemType',
         'System.State',
@@ -23,13 +23,13 @@ class AzureTaskProvider(TaskProvider):
         'Microsoft.VSTS.Common.ClosedDate'
     ]
 
-    DEFAULT_FIELDS = AZURE_DEFAULT_FIELDS + [WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME]
-
     def __init__(self, azure_client, query: str, additional_fields: Optional[Iterable[str]] = None,
+                 custom_expand_fields: Optional[Iterable[str]] = None,
                  page_size: int = 200, thread_pool_executor: Optional[ThreadPoolExecutor] = None) -> None:
         self.azure_client = azure_client
         self.query = query.strip()
         self.additional_fields = list(additional_fields) if additional_fields is not None else list(self.DEFAULT_FIELDS)
+        self.custom_expand_fields = custom_expand_fields
         self.page_size = max(1, page_size)
         self.thread_pool_executor = thread_pool_executor
 
@@ -48,7 +48,7 @@ class AzureTaskProvider(TaskProvider):
         else:
             fetched_tasks = self._fetch_task_concurrently(work_item_ids, total_batches, total_ids)
 
-        if self.WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME in self.additional_fields:
+        if self.custom_expand_fields and self.WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME in self.custom_expand_fields:
             self._attach_changelog_history(fetched_tasks)
         return fetched_tasks
 

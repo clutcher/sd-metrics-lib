@@ -16,7 +16,8 @@ def azure_search_more_than_limit_example(wit_client):
             teams=['Empower\\Flow'],
             order_by='[System.ChangedDate] DESC'
         )
-        return AzureTaskProvider(client, additional_fields=AzureTaskProvider.AZURE_DEFAULT_FIELDS,
+        return AzureTaskProvider(client, additional_fields=AzureTaskProvider.DEFAULT_FIELDS,
+                                 custom_expand_fields=[AzureTaskProvider.WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME],
                                  query=(qb.build_query()), thread_pool_executor=thread_pool)
 
     # given
