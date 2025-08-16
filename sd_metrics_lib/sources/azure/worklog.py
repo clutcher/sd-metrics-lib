@@ -24,18 +24,18 @@ class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
         fields = task.fields
         return fields.get('CustomExpand.WorkItemUpdate') or []
 
-    def _is_user_change_entry(self, changelog_entry: dict) -> bool:
+    def _is_user_change_entry(self, changelog_entry) -> bool:
         fields = changelog_entry.fields
         return fields and 'System.AssignedTo' in fields and fields['System.AssignedTo'].new_value is not None
 
-    def _is_status_change_entry(self, changelog_entry: dict) -> bool:
+    def _is_status_change_entry(self, changelog_entry) -> bool:
         fields = changelog_entry.fields
         return fields and 'System.State' in fields and fields['System.State'].new_value is not None
 
-    def _extract_user_from_change(self, changelog_entry: dict) -> str:
+    def _extract_user_from_change(self, changelog_entry) -> str:
         return changelog_entry.fields['System.AssignedTo'].new_value['uniqueName']
 
-    def _extract_change_time(self, changelog_entry: dict):
+    def _extract_change_time(self, changelog_entry):
         date_string = changelog_entry.fields['System.ChangedDate'].new_value
         try:
             return datetime.strptime(date_string, self.time_format)
@@ -43,12 +43,12 @@ class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
             # Sometimes Azure API returns time without milliseconds
             return datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S%z')
 
-    def _is_status_changed_into_required(self, changelog_entry: dict) -> bool:
+    def _is_status_changed_into_required(self, changelog_entry) -> bool:
         if self.transition_statuses is None:
             return True
         return changelog_entry.fields['System.State'].new_value in self.transition_statuses
 
-    def _is_status_changed_from_required(self, changelog_entry: dict) -> bool:
+    def _is_status_changed_from_required(self, changelog_entry) -> bool:
         if self.transition_statuses is None:
             return True
         return changelog_entry.fields['System.State'].old_value in self.transition_statuses

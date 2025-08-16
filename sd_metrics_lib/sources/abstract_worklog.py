@@ -53,27 +53,27 @@ class AbstractStatusChangeWorklogExtractor(WorklogExtractor, ABC):
         pass
 
     @abstractmethod
-    def _is_user_change_entry(self, changelog_entry: dict) -> bool:
+    def _is_user_change_entry(self, changelog_entry) -> bool:
         pass
 
     @abstractmethod
-    def _is_status_change_entry(self, changelog_entry: dict) -> bool:
+    def _is_status_change_entry(self, changelog_entry) -> bool:
         pass
 
     @abstractmethod
-    def _extract_user_from_change(self, changelog_entry: dict) -> str:
+    def _extract_user_from_change(self, changelog_entry) -> str:
         pass
 
     @abstractmethod
-    def _extract_change_time(self, changelog_entry: dict) -> datetime:
+    def _extract_change_time(self, changelog_entry) -> datetime:
         pass
 
     @abstractmethod
-    def _is_status_changed_into_required(self, changelog_entry: dict) -> bool:
+    def _is_status_changed_into_required(self, changelog_entry) -> bool:
         pass
 
     @abstractmethod
-    def _is_status_changed_from_required(self, changelog_entry: dict) -> bool:
+    def _is_status_changed_from_required(self, changelog_entry) -> bool:
         pass
 
     @abstractmethod
