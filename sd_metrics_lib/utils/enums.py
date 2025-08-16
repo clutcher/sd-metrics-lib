@@ -11,6 +11,7 @@ class VelocityTimeUnit(Enum):
 class HealthStatus(Enum):
     GREEN = auto()
     YELLOW = auto()
+    ORANGE = auto()
     RED = auto()
 
 
