@@ -227,6 +227,14 @@ print(velocity)
 
 ## Version history
 
+### 5.0
+
++ (Breaking) Restructure packages and rename files for better import Developer Experience.
+
++ (Feature) Add proxy style classes for extractors
++ (Bug Fix) Fix tasks id adding in query builders
++ (Bug Fix) Fix not working custom expand field in AzureTaskProvider 
+
 ### 4.0
 
 + (Breaking) Fix circular module import issue
