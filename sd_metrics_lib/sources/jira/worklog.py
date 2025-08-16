@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from data_providers import WorklogExtractor
-from data_providers.abstract_worklog_extractor import AbstractStatusChangeWorklogExtractor
-from data_providers.worklog_extractor import TaskTotalSpentTimeExtractor
-from data_providers.worktime_extractor import SimpleWorkTimeExtractor, WorkTimeExtractor
+from sd_metrics_lib.sources.worklog import WorklogExtractor
+from sd_metrics_lib.sources.abstract_worklog import AbstractStatusChangeWorklogExtractor
+from sd_metrics_lib.sources.worklog import TaskTotalSpentTimeExtractor
+from sd_metrics_lib.utils.worktime import SimpleWorkTimeExtractor, WorkTimeExtractor
 
 
 class JiraWorklogExtractor(WorklogExtractor):

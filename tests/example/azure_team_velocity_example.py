@@ -3,11 +3,12 @@ import datetime
 from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
 
-from calculators.velocity_calculator import VelocityTimeUnit, GeneralizedTeamVelocityCalculator
-from data_providers.azure.query_builder import AzureSearchQueryBuilder
-from data_providers.azure.story_point_extractor import AzureStoryPointExtractor
-from data_providers.azure.task_provider import AzureTaskProvider
-from data_providers.azure.worklog_extractor import AzureTaskTotalSpentTimeExtractor
+from sd_metrics_lib.utils.enums import VelocityTimeUnit
+from sd_metrics_lib.calculators.velocity import GeneralizedTeamVelocityCalculator
+from sd_metrics_lib.sources.azure.query import AzureSearchQueryBuilder
+from sd_metrics_lib.sources.azure.story_points import AzureStoryPointExtractor
+from sd_metrics_lib.sources.azure.tasks import AzureTaskProvider
+from sd_metrics_lib.sources.azure.worklog import AzureTaskTotalSpentTimeExtractor
 
 
 def team_velocity_integration_test(wit_client):

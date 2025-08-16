@@ -3,14 +3,14 @@ from concurrent.futures import ThreadPoolExecutor
 
 from atlassian import Jira
 
-from calculators import UserVelocityCalculator
-from calculators.velocity_calculator import VelocityTimeUnit
-from data_providers.jira.query_builder import JiraSearchQueryBuilder
-from data_providers.jira.story_point_extractor import JiraTShirtStoryPointExtractor
-from data_providers.jira.task_provider import JiraTaskProvider
-from data_providers.jira.worklog_extractor import JiraStatusChangeWorklogExtractor, JiraWorklogExtractor
-from data_providers.task_provider import CachingTaskProvider
-from data_providers.worklog_extractor import ChainedWorklogExtractor
+from sd_metrics_lib.calculators.velocity import UserVelocityCalculator
+from sd_metrics_lib.utils.enums import VelocityTimeUnit
+from sd_metrics_lib.sources.jira.query import JiraSearchQueryBuilder
+from sd_metrics_lib.sources.jira.story_points import JiraTShirtStoryPointExtractor
+from sd_metrics_lib.sources.jira.tasks import JiraTaskProvider
+from sd_metrics_lib.sources.jira.worklog import JiraStatusChangeWorklogExtractor, JiraWorklogExtractor
+from sd_metrics_lib.sources.tasks import CachingTaskProvider
+from sd_metrics_lib.sources.worklog import ChainedWorklogExtractor
 
 CACHE = {}
 

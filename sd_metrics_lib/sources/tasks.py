@@ -2,7 +2,7 @@ from abc import abstractmethod, ABC
 from typing import Optional, List, Tuple, Set, Iterable
 from typing import Union
 
-from .utils.cache_support import (
+from sd_metrics_lib.utils.cache import (
     DictProtocol,
     CacheProtocol,
     DictToCacheProtocolAdapter,

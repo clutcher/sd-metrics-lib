@@ -1,8 +1,9 @@
 import unittest
 
-from calculators import UserVelocityCalculator
-from data_providers.jira import JiraCustomFieldStoryPointExtractor, JiraStatusChangeWorklogExtractor
-from data_providers.task_provider import ProxyTaskProvider
+from sd_metrics_lib.calculators.velocity import UserVelocityCalculator
+from sd_metrics_lib.sources.jira.story_points import JiraCustomFieldStoryPointExtractor
+from sd_metrics_lib.sources.jira.worklog import JiraStatusChangeWorklogExtractor
+from sd_metrics_lib.sources.tasks import ProxyTaskProvider
 
 TEST_USER = 'test_user'
 

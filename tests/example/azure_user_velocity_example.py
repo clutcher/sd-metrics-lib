@@ -4,13 +4,13 @@ from concurrent.futures import ThreadPoolExecutor
 from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
 
-from calculators import UserVelocityCalculator
-from calculators.velocity_calculator import VelocityTimeUnit
-from data_providers.azure.query_builder import AzureSearchQueryBuilder
-from data_providers.azure.story_point_extractor import AzureStoryPointExtractor
-from data_providers.azure.task_provider import AzureTaskProvider
-from data_providers.azure.worklog_extractor import AzureStatusChangeWorklogExtractor
-from data_providers.worklog_extractor import ChainedWorklogExtractor
+from sd_metrics_lib.calculators.velocity import UserVelocityCalculator
+from sd_metrics_lib.utils.enums import VelocityTimeUnit
+from sd_metrics_lib.sources.azure.query import AzureSearchQueryBuilder
+from sd_metrics_lib.sources.azure.story_points import AzureStoryPointExtractor
+from sd_metrics_lib.sources.azure.tasks import AzureTaskProvider
+from sd_metrics_lib.sources.azure.worklog import AzureStatusChangeWorklogExtractor
+from sd_metrics_lib.sources.worklog import ChainedWorklogExtractor
 
 thread_pool = ThreadPoolExecutor(max_workers=20, thread_name_prefix="test-fetch")
 

@@ -1,8 +1,8 @@
 import unittest
 from typing import Optional, List
 
-from data_providers.task_provider import TaskProvider, CachingTaskProvider
-from data_providers.utils.cache_support import CacheProtocol, CacheKeyBuilder
+from sd_metrics_lib.sources.tasks import TaskProvider, CachingTaskProvider
+from sd_metrics_lib.utils.cache import CacheProtocol, CacheKeyBuilder
 
 
 class CountingProvider(TaskProvider):

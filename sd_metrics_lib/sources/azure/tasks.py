@@ -4,7 +4,7 @@ from typing import Iterable, List, Optional
 
 from azure.devops.v7_1.work_item_tracking.models import Wiql
 
-from data_providers.task_provider import TaskProvider
+from sd_metrics_lib.sources.tasks import TaskProvider
 
 
 class AzureTaskProvider(TaskProvider):

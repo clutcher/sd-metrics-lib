@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Dict, Iterable, Optional
 
-from data_providers import WorklogExtractor
-from data_providers.worktime_extractor import WorkTimeExtractor, SimpleWorkTimeExtractor
+from sd_metrics_lib.sources.worklog import WorklogExtractor
+from sd_metrics_lib.utils.worktime import WorkTimeExtractor, SimpleWorkTimeExtractor
 
 
 class AbstractStatusChangeWorklogExtractor(WorklogExtractor, ABC):

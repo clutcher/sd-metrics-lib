@@ -1,7 +1,7 @@
 import datetime
 from abc import ABC, abstractmethod
 
-from common import WEEKDAY_FRIDAY, get_seconds_in_day
+from sd_metrics_lib.utils.time import WEEKDAY_FRIDAY, get_seconds_in_day
 
 
 class WorkTimeExtractor(ABC):

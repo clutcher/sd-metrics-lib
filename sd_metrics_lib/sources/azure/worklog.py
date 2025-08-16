@@ -1,9 +1,9 @@
 from datetime import datetime
 from typing import Optional, List
 
-from data_providers.abstract_worklog_extractor import AbstractStatusChangeWorklogExtractor
-from data_providers.worklog_extractor import TaskTotalSpentTimeExtractor
-from data_providers.worktime_extractor import WorkTimeExtractor, SimpleWorkTimeExtractor
+from sd_metrics_lib.sources.abstract_worklog import AbstractStatusChangeWorklogExtractor
+from sd_metrics_lib.sources.worklog import TaskTotalSpentTimeExtractor
+from sd_metrics_lib.utils.worktime import WorkTimeExtractor, SimpleWorkTimeExtractor
 
 
 class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):

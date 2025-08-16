@@ -1,7 +1,7 @@
 import datetime
 import unittest
 
-from data_providers.azure.query_builder import AzureSearchQueryBuilder
+from sd_metrics_lib.sources.azure.query import AzureSearchQueryBuilder
 
 
 class AzureSearchQueryBuilderTestCase(unittest.TestCase):

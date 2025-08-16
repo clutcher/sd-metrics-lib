@@ -1,7 +1,7 @@
 import datetime
 import unittest
 
-from data_providers.jira.query_builder import JiraSearchQueryBuilder
+from sd_metrics_lib.sources.jira.query import JiraSearchQueryBuilder
 
 
 class JiraSearchQueryBuilderTestCase(unittest.TestCase):

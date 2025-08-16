@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import Dict
 
-from calculators.metrics_calculator import MetricCalculator
-from calculators.utils import time_utils
-from common import VelocityTimeUnit
-from data_providers.story_point_extractor import StoryPointExtractor
-from data_providers.task_provider import TaskProvider
-from data_providers.worklog_extractor import WorklogExtractor, TaskTotalSpentTimeExtractor
+from sd_metrics_lib.calculators.metrics import MetricCalculator
+from sd_metrics_lib.utils.enums import VelocityTimeUnit
+from sd_metrics_lib.utils import time as timeutil
+from sd_metrics_lib.sources.story_points import StoryPointExtractor
+from sd_metrics_lib.sources.tasks import TaskProvider
+from sd_metrics_lib.sources.worklog import WorklogExtractor, TaskTotalSpentTimeExtractor
 
 
 class AbstractMetricCalculator(MetricCalculator, ABC):
@@ -58,7 +58,7 @@ class UserVelocityCalculator(AbstractMetricCalculator):
         for user in self.resolved_story_points_per_user:
             spent_time_in_seconds = self.time_in_seconds_spent_per_user[user]
             if spent_time_in_seconds != 0:
-                spent_time = time_utils.convert_time(spent_time_in_seconds, time_unit)
+                spent_time = timeutil.convert_time(spent_time_in_seconds, time_unit)
                 developer_velocity = self.resolved_story_points_per_user[user] / spent_time
                 if developer_velocity != 0:
                     self.velocity_per_user[user] = developer_velocity
@@ -113,7 +113,7 @@ class GeneralizedTeamVelocityCalculator(AbstractMetricCalculator):
         self.time_extractor = time_extractor
 
     def _calculate_metric(self, time_unit: VelocityTimeUnit):
-        spent_time = time_utils.convert_time(self.total_spent_time_in_seconds, time_unit)
+        spent_time = timeutil.convert_time(self.total_spent_time_in_seconds, time_unit)
         story_points = self.total_resolved_story_points
 
         if spent_time == 0:

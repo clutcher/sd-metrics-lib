@@ -3,7 +3,7 @@ import math
 from concurrent.futures import ThreadPoolExecutor, wait
 from typing import Iterable
 
-from data_providers import TaskProvider
+from sd_metrics_lib.sources.tasks import TaskProvider
 
 
 class JiraTaskProvider(TaskProvider):

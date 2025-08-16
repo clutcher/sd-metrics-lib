@@ -1,6 +1,6 @@
 from typing import Dict
 
-from data_providers import StoryPointExtractor
+from sd_metrics_lib.sources.story_points import StoryPointExtractor
 
 
 class JiraCustomFieldStoryPointExtractor(StoryPointExtractor):

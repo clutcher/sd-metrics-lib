@@ -3,7 +3,7 @@ import datetime
 
 from dateutil.relativedelta import relativedelta
 
-from common import VelocityTimeUnit
+from sd_metrics_lib.utils import VelocityTimeUnit
 
 
 class TimeRangeGenerator:

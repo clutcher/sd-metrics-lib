@@ -3,8 +3,8 @@ from concurrent.futures import ThreadPoolExecutor
 from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
 
-from data_providers.azure.query_builder import AzureSearchQueryBuilder
-from data_providers.azure.task_provider import AzureTaskProvider
+from sd_metrics_lib.sources.azure.query import AzureSearchQueryBuilder
+from sd_metrics_lib.sources.azure.tasks import AzureTaskProvider
 
 thread_pool = ThreadPoolExecutor(max_workers=20, thread_name_prefix="test-fetch")
 

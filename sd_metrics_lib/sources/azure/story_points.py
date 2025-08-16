@@ -1,6 +1,6 @@
 from typing import Optional
 
-from data_providers.story_point_extractor import StoryPointExtractor
+from sd_metrics_lib.sources.story_points import StoryPointExtractor
 
 
 class AzureStoryPointExtractor(StoryPointExtractor):
