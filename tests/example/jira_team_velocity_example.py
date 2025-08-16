@@ -1,7 +1,7 @@
 from atlassian import Jira
 
+from calculators.velocity import GeneralizedTeamVelocityCalculator
 from sd_metrics_lib.utils.enums import VelocityTimeUnit
-from sd_metrics_lib.calculators import GeneralizedTeamVelocityCalculator
 from sd_metrics_lib.sources.jira.story_points import JiraTShirtStoryPointExtractor
 from sd_metrics_lib.sources.jira.tasks import JiraTaskProvider
 from sd_metrics_lib.sources.jira.worklog import JiraResolutionTimeTaskTotalSpentTimeExtractor
