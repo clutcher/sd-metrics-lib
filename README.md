@@ -227,6 +227,10 @@ print(velocity)
 
 ## Version history
 
+### 5.0.2
+
++ (Improvement) Better type support for FunctionExtractors
+
 ### 5.0.1
 
 + (Bug Fix) Fix bad import in utils module
