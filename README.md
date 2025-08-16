@@ -27,11 +27,18 @@ This library separates metric calculation from data sourcing. Calculators operat
     - `CachingTaskProvider`: Caches results of any `TaskProvider`. Cache key is built from `provider.query` and `provider.additional_fields`; works with any dict-like cache (e.g., `cachetools.TTLCache`).
 - Module: `sd_metrics_lib.sources.story_points`
     - `StoryPointExtractor` (abstract)
-    - `AzureStoryPointExtractor`/`Jira*StoryPointExtractor` live in vendor packages below.
+    - `ConstantStoryPointExtractor`: Returns a constant story point value (defaults to 1).
+    - `FunctionStoryPointExtractor`: Wraps a callable to compute story points from a task.
+    - `AttributePathStoryPointExtractor`: Reads story points via dotted attribute/dict path and converts to float with default fallback.
+    - Vendor implementations below: `AzureStoryPointExtractor`, `JiraCustomFieldStoryPointExtractor`, `JiraTShirtStoryPointExtractor`.
 - Module: `sd_metrics_lib.sources.worklog`
     - `WorklogExtractor` (abstract): Returns mapping `user -> seconds` for a task.
     - `TaskTotalSpentTimeExtractor` (abstract): Returns total time-in-seconds spent on a task.
     - `ChainedWorklogExtractor`: Tries extractors in order and returns the first non-empty result.
+    - `FunctionWorklogExtractor`: Wraps a callable to produce per-user seconds dict; coerces keys to str and values to int.
+    - `FunctionTotalSpentTimeExtractor`: Wraps a callable returning total seconds; coerces to int with safe defaults.
+    - `AttributePathWorklogExtractor`: Reads a dict at a dotted attribute/dict path and normalizes keys/values.
+    - `AttributePathTotalSpentTimeExtractor`: Reads a numeric value at a dotted path and converts to int with default fallback.
 - Module: `sd_metrics_lib.sources.abstract_worklog`
     - `AbstractStatusChangeWorklogExtractor` (abstract): Derives work time from assignment/status change history; attributes time to assignee and respects optional user filters and `WorkTimeExtractor`.
 
@@ -65,7 +72,7 @@ This library separates metric calculation from data sourcing. Calculators operat
 
 - Module: `sd_metrics_lib.utils.enums`
     - `VelocityTimeUnit` (Enum): values `HOUR`, `DAY`, `WEEK`, `MONTH`
-    - `HealthStatus` (Enum): values `GREEN`, `YELLOW`, `RED`
+    - `HealthStatus` (Enum): values `GREEN`, `YELLOW`, `ORANGE`, `RED`
     - `SeniorityLevel` (Enum): values `JUNIOR`, `MIDDLE`, `SENIOR`
 - Module: `sd_metrics_lib.utils.storypoints`
     - `TShirtMapping`: Helper to convert between T-shirt sizes (`XS`/`S`/`M`/`L`/`XL`) and story points using default mapping `xs=1`, `s=5`, `m=8`, `l=13`, `xl=21`.
@@ -73,6 +80,15 @@ This library separates metric calculation from data sourcing. Calculators operat
     - Constants: `SECONDS_IN_HOUR`, `WORKING_HOURS_PER_DAY`, `WORKING_DAYS_PER_WEEK`, `WORKING_WEEKS_IN_MONTH`, `WEEKDAY_FRIDAY`
     - `get_seconds_in_day() -> int`
     - `convert_time(spent_time_in_seconds, VelocityTimeUnit) -> float`
+- Module: `sd_metrics_lib.utils.worktime`
+    - `WorkTimeExtractor` (abstract)
+    - `SimpleWorkTimeExtractor`: Computes working seconds between two datetimes with business-day heuristics.
+    - `BoundarySimpleWorkTimeExtractor`: Like `SimpleWorkTimeExtractor` but clamps to [start, end] boundaries.
+- Module: `sd_metrics_lib.utils.cache`
+    - `CacheProtocol` (Protocol), `DictProtocol` (Protocol)
+    - `DictToCacheProtocolAdapter`: Adapts a dict-like to `CacheProtocol`.
+    - `CacheKeyBuilder`: Helpers to build cache keys for data/meta entries.
+    - `SupersetResolver`: Finds a superset fieldset for cached data reuse.
 - Module: `sd_metrics_lib.utils.generators`
     - `TimeRangeGenerator`: Iterator producing date ranges for the requested `VelocityTimeUnit`
 
@@ -86,12 +102,13 @@ Use the physical modules directly (no export shims):
   - `from sd_metrics_lib.utils.enums import VelocityTimeUnit, HealthStatus, SeniorityLevel`
   - `from sd_metrics_lib.utils.storypoints import TShirtMapping`
   - `from sd_metrics_lib.utils.time import SECONDS_IN_HOUR, WORKING_HOURS_PER_DAY, WORKING_DAYS_PER_WEEK, WORKING_WEEKS_IN_MONTH, WEEKDAY_FRIDAY, get_seconds_in_day, convert_time`
+  - `from sd_metrics_lib.utils.worktime import WorkTimeExtractor, SimpleWorkTimeExtractor, BoundarySimpleWorkTimeExtractor`
   - `from sd_metrics_lib.utils.generators import TimeRangeGenerator`
-  - `from sd_metrics_lib.utils.cache import CacheKeyBuilder, CacheProtocol, DictToCacheProtocolAdapter`
+  - `from sd_metrics_lib.utils.cache import CacheKeyBuilder, CacheProtocol, DictToCacheProtocolAdapter, SupersetResolver, DictProtocol`
 - Sources (providers):
   - `from sd_metrics_lib.sources.tasks import TaskProvider, ProxyTaskProvider, CachingTaskProvider`
-  - `from sd_metrics_lib.sources.story_points import StoryPointExtractor`
-  - `from sd_metrics_lib.sources.worklog import WorklogExtractor, ChainedWorklogExtractor, TaskTotalSpentTimeExtractor`
+  - `from sd_metrics_lib.sources.story_points import StoryPointExtractor, ConstantStoryPointExtractor, FunctionStoryPointExtractor, AttributePathStoryPointExtractor`
+  - `from sd_metrics_lib.sources.worklog import WorklogExtractor, ChainedWorklogExtractor, TaskTotalSpentTimeExtractor, FunctionWorklogExtractor, FunctionTotalSpentTimeExtractor, AttributePathWorklogExtractor, AttributePathTotalSpentTimeExtractor`
 - Jira:
   - `from sd_metrics_lib.sources.jira.query import JiraSearchQueryBuilder`
   - `from sd_metrics_lib.sources.jira.tasks import JiraTaskProvider`
