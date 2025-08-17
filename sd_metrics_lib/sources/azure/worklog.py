@@ -33,7 +33,7 @@ class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
         return fields and 'System.State' in fields and fields['System.State'].new_value is not None
 
     def _extract_user_from_change(self, changelog_entry) -> str:
-        return changelog_entry.fields['System.AssignedTo'].new_value['uniqueName']
+        return changelog_entry.fields['System.AssignedTo'].new_value['id']
 
     def _extract_change_time(self, changelog_entry):
         date_string = changelog_entry.fields['System.ChangedDate'].new_value
