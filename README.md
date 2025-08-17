@@ -227,6 +227,13 @@ print(velocity)
 
 ## Version history
 
+### 5.1.0
+
++ (Feature) AzureTaskProvider: add support for child tasks fetching via custom expand field 'CustomExpand.ChildTasks'
++ (Feature) JiraTaskProvider: fetch all fields for subtasks when 'subtasks' is requested
++ (Bug Fix) JiraSearchQueryBuilder: do not add filter clauses for empty iterables (avoid broken JQL)
++ (Bug Fix) AzureStatusChangeWorklogExtractor: use user id instead of uniqueName for proper log extraction
+
 ### 5.0.2
 
 + (Improvement) Better type support for FunctionExtractors
