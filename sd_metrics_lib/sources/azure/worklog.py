@@ -40,12 +40,15 @@ class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
             return assigned_to.get('id', self._default_assigned_user())
 
     def _extract_change_time(self, changelog_entry):
-        date_string = changelog_entry.revisedDate
-        try:
-            return datetime.strptime(date_string, self.time_format)
-        except ValueError:
-            # Sometimes Azure API returns time without milliseconds
-            return datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S%z')
+        revised_date = changelog_entry.revised_date
+        if isinstance(revised_date, datetime):
+            return revised_date
+        else:
+            try:
+                return datetime.strptime(revised_date, self.time_format)
+            except ValueError:
+                # Sometimes Azure API returns time without milliseconds
+                return datetime.strptime(revised_date, '%Y-%m-%dT%H:%M:%S%z')
 
     def _is_status_changed_into_required(self, changelog_entry) -> bool:
         if self.transition_statuses is None:
