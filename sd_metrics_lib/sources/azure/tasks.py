@@ -42,21 +42,10 @@ class AzureTaskProvider(TaskProvider):
 
     def get_tasks(self) -> list:
         task_ids = self._fetch_task_ids_paginated()
-
-        fetched_tasks = []
         if not task_ids:
-            return fetched_tasks
+            return []
 
-        fetched_tasks = self._fetch_tasks(task_ids)
-
-        if self.custom_expand_fields:
-            if self.WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME in self.custom_expand_fields:
-                self._attach_changelog_history(fetched_tasks)
-
-            if self.CHILD_TASKS_CUSTOM_FIELD_NAME in self.custom_expand_fields:
-                self._attach_child_tasks(fetched_tasks)
-
-        return fetched_tasks
+        return self._fetch_tasks(task_ids, self.custom_expand_fields)
 
     def _fetch_task_ids_paginated(self) -> List[int]:
         base_query_no_order = self._remove_custom_order_by(self.query)
@@ -76,7 +65,7 @@ class AzureTaskProvider(TaskProvider):
                 break
         return all_ids
 
-    def _fetch_tasks(self, work_item_ids):
+    def _fetch_tasks(self, work_item_ids, custom_expand_fields):
         work_item_ids_list = list(work_item_ids)
         total_ids = len(work_item_ids_list)
         total_batches = math.ceil(total_ids / float(self.page_size))
@@ -84,6 +73,14 @@ class AzureTaskProvider(TaskProvider):
             fetched_tasks = self._fetch_task_sync(work_item_ids_list, total_batches, total_ids)
         else:
             fetched_tasks = self._fetch_task_concurrently(work_item_ids_list, total_batches, total_ids)
+
+        if custom_expand_fields:
+            if self.WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME in custom_expand_fields:
+                self._attach_changelog_history(fetched_tasks)
+
+            if self.CHILD_TASKS_CUSTOM_FIELD_NAME in custom_expand_fields:
+                self._attach_child_tasks(fetched_tasks)
+
         return fetched_tasks
 
     def _fetch_task_sync(self, work_item_ids: List[int], total_batches: int, total_ids: int) -> List:
@@ -134,7 +131,12 @@ class AzureTaskProvider(TaskProvider):
         if not child_to_parent:
             return
 
-        child_tasks = self._fetch_tasks(child_to_parent.keys())
+        child_custom_expand_fields = [
+            field for field in self.custom_expand_fields
+            if field != self.CHILD_TASKS_CUSTOM_FIELD_NAME
+        ]
+
+        child_tasks = self._fetch_tasks(child_to_parent.keys(), child_custom_expand_fields)
         id_to_child = {child.id: child for child in child_tasks if child is not None}
 
         for child_id, parent_id in child_to_parent.items():
