@@ -12,7 +12,7 @@ class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
                  transition_statuses: Optional[list[str]] = None,
                  user_filter: Optional[list[str]] = None,
                  time_format='%Y-%m-%dT%H:%M:%S.%f%z',
-                 use_user_name: bool = True,
+                 use_user_name: bool = False,
                  worktime_extractor: WorkTimeExtractor = SimpleWorkTimeExtractor()) -> None:
         super().__init__(transition_statuses=transition_statuses,
                          user_filter=user_filter,
@@ -35,7 +35,16 @@ class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
     def _extract_user_from_change(self, changelog_entry) -> str:
         assigned_to = changelog_entry.fields['System.AssignedTo'].new_value
         if self.use_user_name:
-            return assigned_to.get('displayName', assigned_to.get('id', self._default_assigned_user()))
+            return assigned_to.get(
+                'displayName',
+                assigned_to.get(
+                    'uniqueName',
+                    assigned_to.get(
+                        'id',
+                        self._default_assigned_user()
+                    )
+                )
+            )
         else:
             return assigned_to.get('id', self._default_assigned_user())
 
@@ -85,7 +94,16 @@ class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
         changed_by = changelog_entry.fields['System.ChangedBy'].new_value
         if changed_by:
             if self.use_user_name:
-                return changed_by.get('displayName', changed_by.get('id'))
+                return changed_by.get(
+                    'displayName',
+                    changed_by.get(
+                        'uniqueName',
+                        changed_by.get(
+                            'id',
+                            self._default_assigned_user()
+                        )
+                    )
+                )
             else:
                 return changed_by.get('id')
         return None
