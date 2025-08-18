@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional
 
 from sd_metrics_lib.sources.abstract_worklog import AbstractStatusChangeWorklogExtractor
 from sd_metrics_lib.sources.worklog import TaskTotalSpentTimeExtractor
@@ -9,8 +9,8 @@ from sd_metrics_lib.utils.worktime import WorkTimeExtractor, SimpleWorkTimeExtra
 class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
 
     def __init__(self,
-                 transition_statuses: Optional[List[str]] = None,
-                 user_filter: Optional[List[str]] = None,
+                 transition_statuses: Optional[list[str]] = None,
+                 user_filter: Optional[list[str]] = None,
                  time_format='%Y-%m-%dT%H:%M:%S.%f%z',
                  use_user_name: bool = True,
                  worktime_extractor: WorkTimeExtractor = SimpleWorkTimeExtractor()) -> None:
@@ -22,7 +22,7 @@ class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
 
     def _extract_chronological_changes_sequence(self, task):
         fields = task.fields
-        return fields.get('CustomExpand.WorkItemUpdate') or []
+        return fields.get('CustomExpand.WorkItemUpdate', [])
 
     def _is_user_change_entry(self, changelog_entry) -> bool:
         fields = changelog_entry.fields
@@ -56,9 +56,17 @@ class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
     def _is_current_status_a_required_status(self, task) -> bool:
         if self.transition_statuses is None:
             return True
-        fields = task.get('fields', {}) if isinstance(task, dict) else {}
-        current = fields.get('System.State')
-        return current in self.transition_statuses
+        current_state = task.fields.get('System.State')
+        return current_state in self.transition_statuses
+
+    def _extract_author_from_changelog_entry(self, changelog_entry) -> Optional[str]:
+        changed_by = changelog_entry.fields['System.ChangedBy'].new_value
+        if changed_by:
+            if self.use_user_name:
+                return changed_by.get('displayName', changed_by.get('id'))
+            else:
+                return changed_by.get('id')
+        return None
 
 
 class AzureTaskTotalSpentTimeExtractor(TaskTotalSpentTimeExtractor):

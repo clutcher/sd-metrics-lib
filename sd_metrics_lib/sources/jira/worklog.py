@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from sd_metrics_lib.sources.worklog import WorklogExtractor
 from sd_metrics_lib.sources.abstract_worklog import AbstractStatusChangeWorklogExtractor
@@ -92,6 +93,7 @@ class JiraStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
             for history_entry_item in history_entry['items']:
                 if self._is_status_change_entry(history_entry_item) or self._is_user_change_entry(history_entry_item):
                     history_entry_item['created'] = history_entry['created']
+                    history_entry_item['author'] = history_entry.get('author', {})
                     changelog_history.append(history_entry_item)
 
         changelog_history.reverse()  # Jira returns newest first; reverse to chronological
@@ -137,6 +139,16 @@ class JiraStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
             return task['fields']['status']['id'] in self.transition_statuses
         else:
             return task['fields']['status']['name'] in self.transition_statuses
+
+    def _extract_author_from_changelog_entry(self, changelog_entry) -> Optional[str]:
+        author = changelog_entry.get('author', {})
+        if not author:
+            return None
+
+        if self.use_user_name:
+            return author.get('displayName')
+        else:
+            return author.get('accountId')
 
 
 class JiraResolutionTimeTaskTotalSpentTimeExtractor(TaskTotalSpentTimeExtractor):

@@ -33,6 +33,11 @@ class AbstractStatusChangeWorklogExtractor(WorklogExtractor, ABC):
                 if self._is_allowed_user(assignee):
                     last_assigned_user = assignee
             elif self._is_status_change_entry(changelog_entry):
+                if last_assigned_user == self._default_assigned_user():
+                    changelog_author = self._extract_author_from_changelog_entry(changelog_entry)
+                    if changelog_author and self._is_allowed_user(changelog_author):
+                        last_assigned_user = changelog_author
+
                 change_time = self._extract_change_time(changelog_entry)
                 if self._is_status_changed_into_required(changelog_entry):
                     if self.interval_start_time is None:
@@ -78,6 +83,10 @@ class AbstractStatusChangeWorklogExtractor(WorklogExtractor, ABC):
 
     @abstractmethod
     def _is_current_status_a_required_status(self, task) -> bool:
+        pass
+
+    @abstractmethod
+    def _extract_author_from_changelog_entry(self, changelog_entry) -> Optional[str]:
         pass
 
     @staticmethod
