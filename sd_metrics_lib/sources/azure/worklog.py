@@ -40,7 +40,7 @@ class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
             return assigned_to.get('id', self._default_assigned_user())
 
     def _extract_change_time(self, changelog_entry):
-        date_string = changelog_entry.fields['System.ChangedDate'].new_value
+        date_string = changelog_entry.revisedDate
         try:
             return datetime.strptime(date_string, self.time_format)
         except ValueError:
