@@ -28,30 +28,55 @@ class AbstractStatusChangeWorklogExtractor(WorklogExtractor, ABC):
 
         last_assigned_user = self._default_assigned_user()
         for changelog_entry in changelog_history:
-            if self._is_user_change_entry(changelog_entry):
+            is_user_change_entry = self._is_user_change_entry(changelog_entry)
+            is_status_change_entry = self._is_status_change_entry(changelog_entry)
+
+            if not is_user_change_entry and not is_status_change_entry:
+                continue
+
+            if is_user_change_entry and is_status_change_entry:
                 assignee = self._extract_user_from_change(changelog_entry)
                 if self._is_allowed_user(assignee):
                     last_assigned_user = assignee
-            elif self._is_status_change_entry(changelog_entry):
-                if last_assigned_user == self._default_assigned_user():
-                    changelog_author = self._extract_author_from_changelog_entry(changelog_entry)
-                    if changelog_author and self._is_allowed_user(changelog_author):
-                        last_assigned_user = changelog_author
 
-                change_time = self._extract_change_time(changelog_entry)
-                if self._is_status_changed_into_required(changelog_entry):
-                    if self.interval_start_time is None:
-                        self.interval_start_time = change_time
-                elif self._is_status_changed_from_required(changelog_entry):
-                    if self.interval_end_time is None:
-                        self.interval_end_time = change_time
-                self.__sum_working_time(working_time_per_user, last_assigned_user)
+                last_assigned_user = self._get_current_assignee_from_changelog_when_last_assigned_is_unknown(
+                    changelog_entry,
+                    last_assigned_user
+                )
+                self._update_time_intervals_and_sum_worklog(changelog_entry, working_time_per_user, last_assigned_user)
+            elif is_user_change_entry:
+                assignee = self._extract_user_from_change(changelog_entry)
+                if self._is_allowed_user(assignee):
+                    last_assigned_user = assignee
+            elif is_status_change_entry:
+                last_assigned_user = self._get_current_assignee_from_changelog_when_last_assigned_is_unknown(
+                    changelog_entry,
+                    last_assigned_user
+                )
+                self._update_time_intervals_and_sum_worklog(changelog_entry, working_time_per_user, last_assigned_user)
 
         if self._is_current_status_a_required_status(task):
             self.interval_end_time = self._now()
-            self.__sum_working_time(working_time_per_user, last_assigned_user)
+            self._sum_working_time(working_time_per_user, last_assigned_user)
 
         return working_time_per_user
+
+    def _update_time_intervals_and_sum_worklog(self, changelog_entry, working_time_per_user, last_assigned_user):
+        change_time = self._extract_change_time(changelog_entry)
+        if self._is_status_changed_into_required(changelog_entry):
+            if self.interval_start_time is None:
+                self.interval_start_time = change_time
+        elif self._is_status_changed_from_required(changelog_entry):
+            if self.interval_end_time is None:
+                self.interval_end_time = change_time
+        self._sum_working_time(working_time_per_user, last_assigned_user)
+
+    def _get_current_assignee_from_changelog_when_last_assigned_is_unknown(self, changelog_entry, last_assigned_user):
+        if last_assigned_user == self._default_assigned_user():
+            status_change_author = self._extract_author_from_changelog_entry(changelog_entry)
+            if status_change_author and self._is_allowed_user(status_change_author):
+                last_assigned_user = status_change_author
+        return last_assigned_user
 
     @abstractmethod
     def _extract_chronological_changes_sequence(self, task) -> Iterable[dict]:
@@ -107,17 +132,17 @@ class AbstractStatusChangeWorklogExtractor(WorklogExtractor, ABC):
         except Exception:
             return datetime.now()
 
-    def __sum_working_time(self, working_time_per_user: Dict[str, int], last_assigned_user: str):
-        if self.__is_interval_found_for_status_change():
+    def _sum_working_time(self, working_time_per_user: Dict[str, int], last_assigned_user: str):
+        if self._is_interval_found_for_status_change():
             seconds_in_status = self.worktime_extractor.extract_time_from_period(self.interval_start_time,
                                                                                  self.interval_end_time)
             if seconds_in_status is not None:
                 working_time_per_user[last_assigned_user] = working_time_per_user.get(last_assigned_user, 0) + seconds_in_status
-            self.__clean_interval_times()
+            self._clean_interval_times()
 
-    def __is_interval_found_for_status_change(self):
+    def _is_interval_found_for_status_change(self):
         return self.interval_start_time is not None and self.interval_end_time is not None
 
-    def __clean_interval_times(self):
+    def _clean_interval_times(self):
         self.interval_start_time = None
         self.interval_end_time = None
