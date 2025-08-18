@@ -227,7 +227,14 @@ print(velocity)
 
 ## Version history
 
-### 5.1.0
+### 5.2
+
++ (Feature) Status-change worklog extractors: infer assignee from status-change author when last assigned is unknown (handles items created pre-assigned with only subsequent status changes)
++ (Fix) AzureStatusChangeWorklogExtractor: support using either user name or user id when resolving assignees
++ (Fix) AzureStatusChangeWorklogExtractor: use revisedDate as the change timestamp basis instead of CreatedDate for correctness
++ (Fix) Abstract status-change worklog: correctly handle a single changelog entry that changes both assignee and status at once
+
+### 5.1
 
 + (Feature) AzureTaskProvider: add support for child tasks fetching via custom expand field 'CustomExpand.ChildTasks'
 + (Feature) JiraTaskProvider: fetch all fields for subtasks when 'subtasks' is requested
