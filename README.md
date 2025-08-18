@@ -227,6 +227,11 @@ print(velocity)
 
 ## Version history
 
+### 5.2.3
+
++ (Feature) utils.time.convert_time: add optional parameter `ideal_working_hours_per_day` to support non-standard working-hours-per-day when converting to DAY/WEEK/MONTH; default preserves previous behavior.
++ (Improvement) AzureStatusChangeWorklogExtractor: when `use_user_name=True`, prefer `displayName`, then `uniqueName` (email/login), and only then fallback to `id`.
+
 ### 5.2.2
 
 + (Bug Fix) AzureTaskProvider: fetch custom expand fields for child tasks
