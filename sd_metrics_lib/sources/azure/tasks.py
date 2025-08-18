@@ -1,6 +1,6 @@
 import math
 from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, Dict
 
 from azure.devops.v7_1.work_item_tracking.models import Wiql
 
