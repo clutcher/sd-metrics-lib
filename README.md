@@ -227,6 +227,10 @@ print(velocity)
 
 ## Version history
 
+### 5.2.1
+
++ (Bug Fix) AzureStatusChangeWorklogExtractor: use revised_date as the change timestamp; also accept datetime objects; handle Azure times without milliseconds.
+
 ### 5.2
 
 + (Feature) Status-change worklog extractors: infer assignee from status-change author when last assigned is unknown (handles items created pre-assigned with only subsequent status changes)
