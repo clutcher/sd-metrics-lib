@@ -227,9 +227,14 @@ print(velocity)
 
 ## Version history
 
+### 5.2.2
+
++ (Bug Fix) AzureTaskProvider: fetch custom expand fields for child tasks
++ (Bug Fix) AzureStatusChangeWorklogExtractor: improve change time resolution by preferring StateChangeDate/ChangedDate
+
 ### 5.2.1
 
-+ (Bug Fix) AzureStatusChangeWorklogExtractor: use revised_date as the change timestamp; also accept datetime objects; handle Azure times without milliseconds.
++ (Bug Fix) AzureStatusChangeWorklogExtractor: use revised_date as the change timestamp; also accept datetime objects; handle Azure times without milliseconds
 
 ### 5.2
 
