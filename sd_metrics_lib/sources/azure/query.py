@@ -93,11 +93,7 @@ class AzureSearchQueryBuilder:
     def with_teams(self, teams: list[str]):
         if not teams:
             return
-        normalized = [t for t in (teams or []) if t and str(t).strip()]
-        if not normalized:
-            return
-        clauses = [f"[System.AreaPath] UNDER '{t}'" for t in normalized]
-        team_filter = clauses[0] if len(clauses) == 1 else "(" + " OR ".join(clauses) + ")"
+        team_filter = "[System.AreaPath] IN (" + self.__convert_in_wiql_value_list(teams) + ")"
         self.__add_filter(self.__QueryParts.AREA_PATH, team_filter)
 
     def with_raw_queries(self, raw_queries: list[str]):

@@ -43,7 +43,7 @@ class AzureSearchQueryBuilderTestCase(unittest.TestCase):
             " AND [System.State] IN ('Active', 'Closed')"
             " AND [Microsoft.VSTS.Common.ClosedDate] >= '2022-03-01' AND [Microsoft.VSTS.Common.ClosedDate] <= '2022-03-31'"
             " AND [System.WorkItemType] IN ('User Story', 'Bug')"
-            " AND ([System.AreaPath] UNDER 'Team A' OR [System.AreaPath] UNDER 'Team B')"
+            " AND [System.AreaPath] IN ('Team A', 'Team B')"
             " AND [System.ChangedDate] >= '2022-02-01'"
             " AND [Custom.Field] = 1"
         )} ORDER BY [System.ChangedDate] DESC"
@@ -57,7 +57,7 @@ class AzureSearchQueryBuilderTestCase(unittest.TestCase):
         # when
         query = builder.build_query()
         # then
-        expected = "SELECT [System.Id] FROM workitems WHERE [System.AreaPath] UNDER 'Team A'"
+        expected = "SELECT [System.Id] FROM workitems WHERE [System.AreaPath] IN ('Team A')"
         self.assertEqual(expected, query)
 
     def test_order_by_only_appended(self):
