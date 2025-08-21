@@ -227,6 +227,11 @@ print(velocity)
 
 ## Version history
 
+### 5.2.4
+
++ (Feature) Query builders (Azure, Jira): add filter by assignee.
++ (Bug Fix) AzureSearchQueryBuilder: team filter now uses `IN (...)` and supports multiple teams.
+
 ### 5.2.3
 
 + (Feature) utils.time.convert_time: add optional parameter `ideal_working_hours_per_day` to support non-standard working-hours-per-day when converting to DAY/WEEK/MONTH; default preserves previous behavior.
