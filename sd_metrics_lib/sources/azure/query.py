@@ -12,6 +12,7 @@ class AzureSearchQueryBuilder:
         LAST_MODIFIED = auto()
         AREA_PATH = auto()
         TASK_IDS = auto()
+        ASSIGNEES = auto()
         ORDER_BY = auto()
 
     def __init__(self,
@@ -22,6 +23,7 @@ class AzureSearchQueryBuilder:
                  resolution_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]] = None,
                  last_modified_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]] = None,
                  task_ids: list[str] = None,
+                 assignees: list[str] = None,
                  raw_queries: list[str] = None,
                  order_by: Optional[str] = None
                  ) -> None:
@@ -35,6 +37,7 @@ class AzureSearchQueryBuilder:
         self.with_teams(teams)
         self.with_last_modified_dates(last_modified_dates)
         self.with_task_ids(task_ids)
+        self.with_assignees(assignees)
         self.with_raw_queries(raw_queries)
         self.with_order_by(order_by)
 
@@ -80,6 +83,12 @@ class AzureSearchQueryBuilder:
             return
         ids_filter = "[System.Id] IN (" + ", ".join(task_ids) + ")"
         self.__add_filter(self.__QueryParts.TASK_IDS, ids_filter)
+
+    def with_assignees(self, assignees: list[str]):
+        if not assignees:
+            return
+        assignees_filter = "[System.AssignedTo] IN (" + self.__convert_in_wiql_value_list(assignees) + ")"
+        self.__add_filter(self.__QueryParts.ASSIGNEES, assignees_filter)
 
     def with_teams(self, teams: list[str]):
         if not teams:

@@ -89,6 +89,15 @@ class JiraSearchQueryBuilderTestCase(unittest.TestCase):
         )
         self.assertEqual(expected, query)
 
+    def test_assignees_only(self):
+        # given
+        builder = JiraSearchQueryBuilder(assignees=['John Doe', 'Jane'])
+        # when
+        query = builder.build_query()
+        # then
+        expected = 'assignee in ("John Doe", "Jane")'
+        self.assertEqual(expected, query)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -12,6 +12,7 @@ class JiraSearchQueryBuilder:
         LAST_MODIFIED = auto()
         TEAM = auto()
         TASK_IDS = auto()
+        ASSIGNEES = auto()
         ORDER_BY = auto()
 
     def __init__(self,
@@ -22,6 +23,7 @@ class JiraSearchQueryBuilder:
                  resolution_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]] = None,
                  last_modified_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]] = None,
                  task_ids: Iterable[str] = None,
+                 assignees: Iterable[str] = None,
                  raw_queries: Iterable[str] = None,
                  order_by: Optional[str] = None
                  ) -> None:
@@ -35,6 +37,7 @@ class JiraSearchQueryBuilder:
         self.with_teams(teams)
         self.with_last_modified_dates(last_modified_dates)
         self.with_task_ids(task_ids)
+        self.with_assignees(assignees)
         self.with_raw_queries(raw_queries)
         self.with_order_by(order_by)
 
@@ -85,6 +88,12 @@ class JiraSearchQueryBuilder:
             return
         team_filter = "Team[Team] in (" + self.__convert_in_jql_value_list(teams) + ")"
         self.__add_filter(self.__QueryParts.TEAM, team_filter)
+
+    def with_assignees(self, assignees: Iterable[str]):
+        if not assignees:
+            return
+        assignees_filter = "assignee in (" + self.__convert_in_jql_value_list(assignees) + ")"
+        self.__add_filter(self.__QueryParts.ASSIGNEES, assignees_filter)
 
     def with_raw_queries(self, raw_queries: Iterable[str]):
         if not raw_queries:

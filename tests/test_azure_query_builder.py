@@ -68,6 +68,15 @@ class AzureSearchQueryBuilderTestCase(unittest.TestCase):
         # then
         self.assertEqual('SELECT [System.Id] FROM workitems ORDER BY [System.CreatedDate] ASC', query)
 
+    def test_assignees_only(self):
+        # given
+        builder = AzureSearchQueryBuilder(assignees=['John Doe', 'Jane'])
+        # when
+        query = builder.build_query()
+        # then
+        expected = "SELECT [System.Id] FROM workitems WHERE [System.AssignedTo] IN ('John Doe', 'Jane')"
+        self.assertEqual(expected, query)
+
 
 if __name__ == '__main__':
     unittest.main()
