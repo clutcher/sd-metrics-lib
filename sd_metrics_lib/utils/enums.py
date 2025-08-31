@@ -14,6 +14,7 @@ class HealthStatus(Enum):
     YELLOW = auto()
     ORANGE = auto()
     RED = auto()
+    GRAY = auto()
 
 
 class SeniorityLevel(Enum):
