@@ -97,28 +97,28 @@ This library separates metric calculation from data sourcing. Calculators operat
 Use the physical modules directly (no export shims):
 
 - Calculators:
-  - `from sd_metrics_lib.calculators.velocity import UserVelocityCalculator, GeneralizedTeamVelocityCalculator`
+    - `from sd_metrics_lib.calculators.velocity import UserVelocityCalculator, GeneralizedTeamVelocityCalculator`
 - Common utilities:
-  - `from sd_metrics_lib.utils.enums import VelocityTimeUnit, HealthStatus, SeniorityLevel`
-  - `from sd_metrics_lib.utils.storypoints import TShirtMapping`
-  - `from sd_metrics_lib.utils.time import SECONDS_IN_HOUR, WORKING_HOURS_PER_DAY, WORKING_DAYS_PER_WEEK, WORKING_WEEKS_IN_MONTH, WEEKDAY_FRIDAY, get_seconds_in_day, convert_time`
-  - `from sd_metrics_lib.utils.worktime import WorkTimeExtractor, SimpleWorkTimeExtractor, BoundarySimpleWorkTimeExtractor`
-  - `from sd_metrics_lib.utils.generators import TimeRangeGenerator`
-  - `from sd_metrics_lib.utils.cache import CacheKeyBuilder, CacheProtocol, DictToCacheProtocolAdapter, SupersetResolver, DictProtocol`
+    - `from sd_metrics_lib.utils.enums import VelocityTimeUnit, HealthStatus, SeniorityLevel`
+    - `from sd_metrics_lib.utils.storypoints import TShirtMapping`
+    - `from sd_metrics_lib.utils.time import SECONDS_IN_HOUR, WORKING_HOURS_PER_DAY, WORKING_DAYS_PER_WEEK, WORKING_WEEKS_IN_MONTH, WEEKDAY_FRIDAY, get_seconds_in_day, convert_time`
+    - `from sd_metrics_lib.utils.worktime import WorkTimeExtractor, SimpleWorkTimeExtractor, BoundarySimpleWorkTimeExtractor`
+    - `from sd_metrics_lib.utils.generators import TimeRangeGenerator`
+    - `from sd_metrics_lib.utils.cache import CacheKeyBuilder, CacheProtocol, DictToCacheProtocolAdapter, SupersetResolver, DictProtocol`
 - Sources (providers):
-  - `from sd_metrics_lib.sources.tasks import TaskProvider, ProxyTaskProvider, CachingTaskProvider`
-  - `from sd_metrics_lib.sources.story_points import StoryPointExtractor, ConstantStoryPointExtractor, FunctionStoryPointExtractor, AttributePathStoryPointExtractor`
-  - `from sd_metrics_lib.sources.worklog import WorklogExtractor, ChainedWorklogExtractor, TaskTotalSpentTimeExtractor, FunctionWorklogExtractor, FunctionTotalSpentTimeExtractor, AttributePathWorklogExtractor, AttributePathTotalSpentTimeExtractor`
+    - `from sd_metrics_lib.sources.tasks import TaskProvider, ProxyTaskProvider, CachingTaskProvider`
+    - `from sd_metrics_lib.sources.story_points import StoryPointExtractor, ConstantStoryPointExtractor, FunctionStoryPointExtractor, AttributePathStoryPointExtractor`
+    - `from sd_metrics_lib.sources.worklog import WorklogExtractor, ChainedWorklogExtractor, TaskTotalSpentTimeExtractor, FunctionWorklogExtractor, FunctionTotalSpentTimeExtractor, AttributePathWorklogExtractor, AttributePathTotalSpentTimeExtractor`
 - Jira:
-  - `from sd_metrics_lib.sources.jira.query import JiraSearchQueryBuilder`
-  - `from sd_metrics_lib.sources.jira.tasks import JiraTaskProvider`
-  - `from sd_metrics_lib.sources.jira.story_points import JiraCustomFieldStoryPointExtractor, JiraTShirtStoryPointExtractor`
-  - `from sd_metrics_lib.sources.jira.worklog import JiraWorklogExtractor, JiraStatusChangeWorklogExtractor, JiraResolutionTimeTaskTotalSpentTimeExtractor`
+    - `from sd_metrics_lib.sources.jira.query import JiraSearchQueryBuilder`
+    - `from sd_metrics_lib.sources.jira.tasks import JiraTaskProvider`
+    - `from sd_metrics_lib.sources.jira.story_points import JiraCustomFieldStoryPointExtractor, JiraTShirtStoryPointExtractor`
+    - `from sd_metrics_lib.sources.jira.worklog import JiraWorklogExtractor, JiraStatusChangeWorklogExtractor, JiraResolutionTimeTaskTotalSpentTimeExtractor`
 - Azure:
-  - `from sd_metrics_lib.sources.azure.query import AzureSearchQueryBuilder`
-  - `from sd_metrics_lib.sources.azure.tasks import AzureTaskProvider`
-  - `from sd_metrics_lib.sources.azure.story_points import AzureStoryPointExtractor`
-  - `from sd_metrics_lib.sources.azure.worklog import AzureStatusChangeWorklogExtractor, AzureTaskTotalSpentTimeExtractor`
+    - `from sd_metrics_lib.sources.azure.query import AzureSearchQueryBuilder`
+    - `from sd_metrics_lib.sources.azure.tasks import AzureTaskProvider`
+    - `from sd_metrics_lib.sources.azure.story_points import AzureStoryPointExtractor`
+    - `from sd_metrics_lib.sources.azure.worklog import AzureStatusChangeWorklogExtractor, AzureTaskTotalSpentTimeExtractor`
 
 ## Installation
 
@@ -227,6 +227,12 @@ print(velocity)
 
 ## Version history
 
+### 5.3.0
+
++ (Feature) add support for time conversion to seconds and customizable time units
++ (Feature) utils.enums.VelocityTimeUnit: add `SECOND` unit to allow per-second velocity conversions.
++ (Feature) utils.enums.HealthStatus: add `GRAY` status to represent unknown/indeterminate health.
+
 ### 5.2.4
 
 + (Feature) Query builders (Azure, Jira): add filter by assignee.
@@ -274,7 +280,7 @@ print(velocity)
 
 + (Feature) Add proxy style classes for extractors
 + (Bug Fix) Fix tasks id adding in query builders
-+ (Bug Fix) Fix not working custom expand field in AzureTaskProvider 
++ (Bug Fix) Fix not working custom expand field in AzureTaskProvider
 
 ### 4.0
 
