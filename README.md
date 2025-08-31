@@ -71,15 +71,15 @@ This library separates metric calculation from data sourcing. Calculators operat
 ### Utilities
 
 - Module: `sd_metrics_lib.utils.enums`
-    - `VelocityTimeUnit` (Enum): values `HOUR`, `DAY`, `WEEK`, `MONTH`
-    - `HealthStatus` (Enum): values `GREEN`, `YELLOW`, `ORANGE`, `RED`
+    - `VelocityTimeUnit` (Enum): values `SECOND`, `HOUR`, `DAY`, `WEEK`, `MONTH`
+    - `HealthStatus` (Enum): values `GREEN`, `YELLOW`, `ORANGE`, `RED`, `GRAY`
     - `SeniorityLevel` (Enum): values `JUNIOR`, `MIDDLE`, `SENIOR`
 - Module: `sd_metrics_lib.utils.storypoints`
     - `TShirtMapping`: Helper to convert between T-shirt sizes (`XS`/`S`/`M`/`L`/`XL`) and story points using default mapping `xs=1`, `s=5`, `m=8`, `l=13`, `xl=21`.
 - Module: `sd_metrics_lib.utils.time`
     - Constants: `SECONDS_IN_HOUR`, `WORKING_HOURS_PER_DAY`, `WORKING_DAYS_PER_WEEK`, `WORKING_WEEKS_IN_MONTH`, `WEEKDAY_FRIDAY`
-    - `get_seconds_in_day() -> int`
-    - `convert_time(spent_time_in_seconds, VelocityTimeUnit) -> float`
+    - `get_seconds_in_day(hours_in_one_day: int = WORKING_HOURS_PER_DAY) -> int`
+    - `convert_time(time_in_seconds: int, time_unit: VelocityTimeUnit, hours_in_one_day: int = WORKING_HOURS_PER_DAY, days_in_one_week: int = WORKING_DAYS_PER_WEEK, weeks_in_one_month: int = WORKING_WEEKS_IN_MONTH) -> float`
 - Module: `sd_metrics_lib.utils.worktime`
     - `WorkTimeExtractor` (abstract)
     - `SimpleWorkTimeExtractor`: Computes working seconds between two datetimes with business-day heuristics.
