@@ -1,7 +1,7 @@
 from atlassian import Jira
 
 from calculators.velocity import GeneralizedTeamVelocityCalculator
-from sd_metrics_lib.utils.enums import VelocityTimeUnit
+from sd_metrics_lib.utils.time import TimeUnit
 from sd_metrics_lib.sources.jira.story_points import JiraTShirtStoryPointExtractor
 from sd_metrics_lib.sources.jira.tasks import JiraTaskProvider
 from sd_metrics_lib.sources.jira.worklog import JiraResolutionTimeTaskTotalSpentTimeExtractor
@@ -37,7 +37,7 @@ def team_velocity_integration_test(client):
                                                             story_point_extractor=t_shirt_story_point_extractor,
                                                             time_extractor=time_extractor)
 
-    velocity = velocity_calculator.calculate(velocity_time_unit=VelocityTimeUnit.DAY)
+    velocity = velocity_calculator.calculate(velocity_time_unit=TimeUnit.DAY)
 
     # then
     print(velocity)

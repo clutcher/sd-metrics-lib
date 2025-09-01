@@ -5,7 +5,7 @@ from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
 
 from sd_metrics_lib.calculators.velocity import UserVelocityCalculator
-from sd_metrics_lib.utils.enums import VelocityTimeUnit
+from sd_metrics_lib.utils.time import TimeUnit
 from sd_metrics_lib.sources.azure.query import AzureSearchQueryBuilder
 from sd_metrics_lib.sources.azure.story_points import AzureStoryPointExtractor
 from sd_metrics_lib.sources.azure.tasks import AzureTaskProvider
@@ -43,7 +43,7 @@ def user_velocity_integration_test(wit_client):
                                                  story_point_extractor=story_point_extractor,
                                                  worklog_extractor=worklog_extractor)
 
-    velocity = velocity_calculator.calculate(velocity_time_unit=VelocityTimeUnit.DAY)
+    velocity = velocity_calculator.calculate(velocity_time_unit=TimeUnit.DAY)
 
     # then
     print(velocity)
