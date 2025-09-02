@@ -65,6 +65,7 @@ class SimpleWorkTimeExtractor(WorkTimeExtractor):
                 workdays += 1
         return workdays
 
+SIMPLE_WORKTIME_EXTRACTOR = SimpleWorkTimeExtractor()
 
 class BoundarySimpleWorkTimeExtractor(SimpleWorkTimeExtractor):
 

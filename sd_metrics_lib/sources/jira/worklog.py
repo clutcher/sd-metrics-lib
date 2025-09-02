@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import Optional
 
-from sd_metrics_lib.sources.worklog import WorklogExtractor
 from sd_metrics_lib.sources.abstract_worklog import AbstractStatusChangeWorklogExtractor
 from sd_metrics_lib.sources.worklog import TaskTotalSpentTimeExtractor
-from sd_metrics_lib.utils.worktime import SimpleWorkTimeExtractor, WorkTimeExtractor
+from sd_metrics_lib.sources.worklog import WorklogExtractor
 from sd_metrics_lib.utils.time import Duration, TimeUnit
+from sd_metrics_lib.utils.worktime import WorkTimeExtractor, SIMPLE_WORKTIME_EXTRACTOR
 
 
 class JiraWorklogExtractor(WorklogExtractor):
@@ -62,9 +62,6 @@ class JiraWorklogExtractor(WorklogExtractor):
     @staticmethod
     def _extract_user_from_worklog(worklog):
         return worklog["author"]["accountId"]
-
-
-SIMPLE_WORKTIME_EXTRACTOR = SimpleWorkTimeExtractor()
 
 class JiraStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
 

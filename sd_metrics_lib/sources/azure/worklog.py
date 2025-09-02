@@ -3,8 +3,8 @@ from typing import Optional
 
 from sd_metrics_lib.sources.abstract_worklog import AbstractStatusChangeWorklogExtractor
 from sd_metrics_lib.sources.worklog import TaskTotalSpentTimeExtractor
-from sd_metrics_lib.utils.worktime import WorkTimeExtractor, SimpleWorkTimeExtractor
 from sd_metrics_lib.utils.time import Duration, TimeUnit
+from sd_metrics_lib.utils.worktime import WorkTimeExtractor, SIMPLE_WORKTIME_EXTRACTOR
 
 
 class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
@@ -14,7 +14,7 @@ class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
                  user_filter: Optional[list[str]] = None,
                  time_format='%Y-%m-%dT%H:%M:%S.%f%z',
                  use_user_name: bool = False,
-                 worktime_extractor: WorkTimeExtractor = SimpleWorkTimeExtractor()) -> None:
+                 worktime_extractor: WorkTimeExtractor = SIMPLE_WORKTIME_EXTRACTOR) -> None:
         super().__init__(transition_statuses=transition_statuses,
                          user_filter=user_filter,
                          worktime_extractor=worktime_extractor)
