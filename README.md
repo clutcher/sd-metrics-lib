@@ -369,6 +369,10 @@ wl = FunctionWorklogExtractor(my_worklog)
 
 ## Version history
 
+### 6.1.0
+
++ (Breaking) Removed VelocityTimeUnit. TimeUnit should be used instead.
+
 ### 6.0
 
 + (Breaking) Adopt Duration/TimeUnit/TimePolicy across the public API. Calculators and worklog extractors now use Duration. Velocity calculators accept utils.time.TimeUnit (not utils.enums.VelocityTimeUnit).
