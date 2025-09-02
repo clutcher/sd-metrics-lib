@@ -1,14 +1,5 @@
 from enum import auto, Enum
 
-
-class VelocityTimeUnit(Enum):
-    SECOND = auto()
-    HOUR = auto()
-    DAY = auto()
-    WEEK = auto()
-    MONTH = auto()
-
-
 class HealthStatus(Enum):
     GREEN = auto()
     YELLOW = auto()

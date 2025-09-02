@@ -71,7 +71,6 @@ This library separates metric calculation from data sourcing. Calculators operat
 ### Utilities
 
 - Module: `sd_metrics_lib.utils.enums`
-    - `VelocityTimeUnit` (Enum): values `SECOND`, `HOUR`, `DAY`, `WEEK`, `MONTH`
     - `HealthStatus` (Enum): values `GREEN`, `YELLOW`, `ORANGE`, `RED`, `GRAY`
     - `SeniorityLevel` (Enum): values `JUNIOR`, `MIDDLE`, `SENIOR`
 - Module: `sd_metrics_lib.utils.storypoints`
@@ -100,7 +99,7 @@ Use the physical modules directly (no export shims):
 - Calculators:
     - `from sd_metrics_lib.calculators.velocity import UserVelocityCalculator, GeneralizedTeamVelocityCalculator`
 - Common utilities:
-    - `from sd_metrics_lib.utils.enums import VelocityTimeUnit, HealthStatus, SeniorityLevel`
+    - `from sd_metrics_lib.utils.enums import HealthStatus, SeniorityLevel`
     - `from sd_metrics_lib.utils.storypoints import TShirtMapping`
     - `from sd_metrics_lib.utils.time import SECONDS_IN_HOUR, WORKING_HOURS_PER_DAY, WORKING_DAYS_PER_WEEK, WORKING_WEEKS_IN_MONTH, WEEKDAY_FRIDAY, TimeUnit, TimePolicy, Duration`
     - `from sd_metrics_lib.utils.worktime import WorkTimeExtractor, SimpleWorkTimeExtractor, BoundarySimpleWorkTimeExtractor`
@@ -147,7 +146,6 @@ Smallest working sketch:
 
 ```python
 from sd_metrics_lib.calculators.velocity import UserVelocityCalculator
-from sd_metrics_lib.utils.enums import VelocityTimeUnit
 from sd_metrics_lib.sources.tasks import ProxyTaskProvider
 from sd_metrics_lib.sources.story_points import ConstantStoryPointExtractor
 from sd_metrics_lib.sources.worklog import FunctionWorklogExtractor
@@ -160,7 +158,7 @@ sp = ConstantStoryPointExtractor(1)
 wl = FunctionWorklogExtractor(lambda t: {"user1": Duration.of(1, TimeUnit.DAY)})
 
 calc = UserVelocityCalculator(provider, sp, wl)
-print(calc.calculate(VelocityTimeUnit.DAY))  # {"user1": ~2.0 / day}
+print(calc.calculate(TimeUnit.DAY))  # {"user1": ~2.0 / day}
 ```
 
 ### Concepts
@@ -189,10 +187,10 @@ This code should work on any project and give at least some data for analysis.
 from atlassian import Jira
 
 from sd_metrics_lib.calculators.velocity import UserVelocityCalculator
-from sd_metrics_lib.utils.enums import VelocityTimeUnit
+from sd_metrics_lib.sources.jira.story_points import JiraCustomFieldStoryPointExtractor
 from sd_metrics_lib.sources.jira.tasks import JiraTaskProvider
 from sd_metrics_lib.sources.jira.worklog import JiraStatusChangeWorklogExtractor
-from sd_metrics_lib.sources.jira.story_points import JiraCustomFieldStoryPointExtractor
+from sd_metrics_lib.utils.time import TimeUnit
 
 JIRA_SERVER = 'server_url'
 JIRA_LOGIN = 'login'
@@ -208,7 +206,7 @@ jira_worklog_extractor = JiraStatusChangeWorklogExtractor(['In Progress', 'In De
 velocity_calculator = UserVelocityCalculator(task_provider=task_provider,
                                              story_point_extractor=story_point_extractor,
                                              worklog_extractor=jira_worklog_extractor)
-velocity = velocity_calculator.calculate(velocity_time_unit=VelocityTimeUnit.DAY)
+velocity = velocity_calculator.calculate(velocity_time_unit=TimeUnit.DAY)
 
 print(velocity)
 ```
@@ -226,11 +224,10 @@ from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
 
 from sd_metrics_lib.calculators.velocity import UserVelocityCalculator
-from sd_metrics_lib.utils.enums import VelocityTimeUnit
-from sd_metrics_lib.sources.azure.tasks import AzureTaskProvider
 from sd_metrics_lib.sources.azure.story_points import AzureStoryPointExtractor
+from sd_metrics_lib.sources.azure.tasks import AzureTaskProvider
 from sd_metrics_lib.sources.azure.worklog import AzureStatusChangeWorklogExtractor
-from sd_metrics_lib.sources.tasks import CachingTaskProvider
+from sd_metrics_lib.utils.time import TimeUnit
 
 # Optional thread pool for faster fetching
 jira_fetch_executor = ThreadPoolExecutor(max_workers=20, thread_name_prefix="azure-fetch")
@@ -262,7 +259,7 @@ worklog_extractor = AzureStatusChangeWorklogExtractor(transition_statuses=['In P
 velocity_calculator = UserVelocityCalculator(task_provider=task_provider,
                                              story_point_extractor=story_point_extractor,
                                              worklog_extractor=worklog_extractor)
-velocity = velocity_calculator.calculate(velocity_time_unit=VelocityTimeUnit.DAY)
+velocity = velocity_calculator.calculate(velocity_time_unit=TimeUnit.DAY)
 
 print(velocity)
 ```
@@ -298,12 +295,13 @@ For each task with positive story points:
 - Team velocity from resolution time (Jira):
 
 ```python
+from atlassian import Jira
+
 from sd_metrics_lib.calculators.velocity import GeneralizedTeamVelocityCalculator
-from sd_metrics_lib.utils.enums import VelocityTimeUnit
+from sd_metrics_lib.sources.jira.story_points import JiraCustomFieldStoryPointExtractor
 from sd_metrics_lib.sources.jira.tasks import JiraTaskProvider
 from sd_metrics_lib.sources.jira.worklog import JiraResolutionTimeTaskTotalSpentTimeExtractor
-from sd_metrics_lib.sources.jira.story_points import JiraCustomFieldStoryPointExtractor
-from atlassian import Jira
+from sd_metrics_lib.utils.time import TimeUnit
 
 # Fetch resolved tasks only; no changelog needed
 jira = Jira('https://your_jira', 'login', 'password', cloud=True)
@@ -312,7 +310,7 @@ provider = JiraTaskProvider(jira, jql)
 sp = JiraCustomFieldStoryPointExtractor('customfield_10010', default_story_points_value=1)
 spent = JiraResolutionTimeTaskTotalSpentTimeExtractor()
 team = GeneralizedTeamVelocityCalculator(provider, sp, spent)
-print(team.calculate(VelocityTimeUnit.DAY))
+print(team.calculate(TimeUnit.DAY))
 ```
 
 - Custom story points from nested attribute path:
