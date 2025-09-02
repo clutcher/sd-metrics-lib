@@ -369,6 +369,12 @@ wl = FunctionWorklogExtractor(my_worklog)
 
 ## Version history
 
+### 6.2.0
+
++ (Feature) Support math and comparison operations of Duration with float/int.
++ (Feature) Add assignee history support in constructors of Azure and Jira query builders.
++ (Refactor) Replace default SimpleWorkTimeExtractor() with SIMPLE_WORKTIME_EXTRACTOR constant in worklog extractors.
+
 ### 6.1.0
 
 + (Breaking) Removed VelocityTimeUnit. TimeUnit should be used instead.
