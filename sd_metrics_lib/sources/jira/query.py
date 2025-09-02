@@ -25,6 +25,7 @@ class JiraSearchQueryBuilder:
                  last_modified_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]] = None,
                  task_ids: Iterable[str] = None,
                  assignees: Iterable[str] = None,
+                 assignees_history: Iterable[str] = None,
                  raw_queries: Iterable[str] = None,
                  order_by: Optional[str] = None
                  ) -> None:
@@ -39,6 +40,7 @@ class JiraSearchQueryBuilder:
         self.with_last_modified_dates(last_modified_dates)
         self.with_task_ids(task_ids)
         self.with_assignees(assignees)
+        self.with_assignees_history(assignees_history)
         self.with_raw_queries(raw_queries)
         self.with_order_by(order_by)
 

@@ -25,6 +25,7 @@ class AzureSearchQueryBuilder:
                  last_modified_dates: tuple[Optional[datetime.datetime], Optional[datetime.datetime]] = None,
                  task_ids: list[str] = None,
                  assignees: list[str] = None,
+                 assignees_history: list[str] = None,
                  raw_queries: list[str] = None,
                  order_by: Optional[str] = None
                  ) -> None:
@@ -39,6 +40,7 @@ class AzureSearchQueryBuilder:
         self.with_last_modified_dates(last_modified_dates)
         self.with_task_ids(task_ids)
         self.with_assignees(assignees)
+        self.with_assignees_history(assignees_history)
         self.with_raw_queries(raw_queries)
         self.with_order_by(order_by)
 
