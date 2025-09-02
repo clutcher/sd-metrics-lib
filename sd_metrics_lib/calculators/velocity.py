@@ -2,8 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Dict
 
 from sd_metrics_lib.calculators.metrics import MetricCalculator
-from sd_metrics_lib.utils.time import TimeUnit
-from sd_metrics_lib.utils import time as timeutil
+from sd_metrics_lib.utils.time import TimeUnit, Duration, TimePolicy
 from sd_metrics_lib.sources.story_points import StoryPointExtractor
 from sd_metrics_lib.sources.tasks import TaskProvider
 from sd_metrics_lib.sources.worklog import WorklogExtractor, TaskTotalSpentTimeExtractor
@@ -14,11 +13,12 @@ class AbstractMetricCalculator(MetricCalculator, ABC):
     def __init__(self) -> None:
         self.data_fetched = False
 
-    def calculate(self, velocity_time_unit=TimeUnit.DAY) -> Dict[str, float]:
+    def calculate(self, velocity_time_unit: TimeUnit = TimeUnit.DAY, time_policy: TimePolicy | None = None) -> Dict[str, float]:
+        policy_used = time_policy or TimePolicy.BUSINESS_HOURS
         if not self.is_data_fetched():
             self._extract_data_from_tasks()
             self.mark_data_fetched()
-        self._calculate_metric(velocity_time_unit)
+        self._calculate_metric(velocity_time_unit, time_policy=policy_used)
         return self.get_metric()
 
     def mark_data_fetched(self):
@@ -28,7 +28,7 @@ class AbstractMetricCalculator(MetricCalculator, ABC):
         return self.data_fetched is True
 
     @abstractmethod
-    def _calculate_metric(self, time_unit: TimeUnit):
+    def _calculate_metric(self, time_unit: TimeUnit, time_policy: TimePolicy):
         pass
 
     @abstractmethod
@@ -52,14 +52,14 @@ class UserVelocityCalculator(AbstractMetricCalculator):
 
         self.velocity_per_user = {}
         self.resolved_story_points_per_user = {}
-        self.time_in_seconds_spent_per_user = {}
+        self.spent_time_per_user: Dict[str, Duration] = {}
 
-    def _calculate_metric(self, time_unit: TimeUnit):
+    def _calculate_metric(self, time_unit: TimeUnit, time_policy: TimePolicy):
         for user in self.resolved_story_points_per_user:
-            spent_time_in_seconds = self.time_in_seconds_spent_per_user[user]
-            if spent_time_in_seconds != 0:
-                spent_time = timeutil.Duration.of(spent_time_in_seconds, timeutil.TimeUnit.SECOND).convert(time_unit, time_policy=timeutil.BUSINESS_POLICY).time_delta
-                developer_velocity = self.resolved_story_points_per_user[user] / spent_time
+            spent_duration = self.spent_time_per_user.get(user)
+            if spent_duration and not spent_duration.is_zero():
+                spent_time_in_unit = spent_duration.convert(time_unit, time_policy).time_delta
+                developer_velocity = self.resolved_story_points_per_user[user] / spent_time_in_unit
                 if developer_velocity != 0:
                     self.velocity_per_user[user] = developer_velocity
 
@@ -79,23 +79,23 @@ class UserVelocityCalculator(AbstractMetricCalculator):
         return self.resolved_story_points_per_user
 
     def get_spent_time(self):
-        return self.time_in_seconds_spent_per_user
+        return self.spent_time_per_user
 
-    def _sum_story_points_and_worklog(self, task_story_points, time_user_worked_on_task):
-        task_total_spent_time = float(sum(time_user_worked_on_task.values()))
-        if task_total_spent_time == 0:
+    def _sum_story_points_and_worklog(self, task_story_points, time_user_worked_on_task: Dict[str, Duration]):
+        total_spent_time_on_task = Duration.sum(list(time_user_worked_on_task.values()), unit=TimeUnit.SECOND)
+        if total_spent_time_on_task.is_zero():
             return
 
         for user in time_user_worked_on_task.keys():
             if user not in self.resolved_story_points_per_user:
-                self.resolved_story_points_per_user[user] = 0.
-            if user not in self.time_in_seconds_spent_per_user:
-                self.time_in_seconds_spent_per_user[user] = 0
+                self.resolved_story_points_per_user[user] = 0.0
+            if user not in self.spent_time_per_user:
+                self.spent_time_per_user[user] = Duration.zero()
 
-        for user in time_user_worked_on_task.keys():
-            story_point_ratio = time_user_worked_on_task[user] / task_total_spent_time
+        for user, user_spent_time_on_task in time_user_worked_on_task.items():
+            story_point_ratio = user_spent_time_on_task.convert(TimeUnit.SECOND).time_delta / total_spent_time_on_task.time_delta
             self.resolved_story_points_per_user[user] += task_story_points * story_point_ratio
-            self.time_in_seconds_spent_per_user[user] += time_user_worked_on_task[user]
+            self.spent_time_per_user[user] = self.spent_time_per_user[user].add(user_spent_time_on_task, unit=TimeUnit.SECOND)
 
 
 class GeneralizedTeamVelocityCalculator(AbstractMetricCalculator):
@@ -104,16 +104,16 @@ class GeneralizedTeamVelocityCalculator(AbstractMetricCalculator):
                  story_point_extractor: StoryPointExtractor,
                  time_extractor: TaskTotalSpentTimeExtractor) -> None:
         super().__init__()
-        self.total_resolved_story_points = 0
-        self.total_spent_time_in_seconds = 0
+        self.total_resolved_story_points = 0.0
+        self.total_spent_time: Duration = Duration.zero()
         self.velocity = None
 
         self.task_provider = task_provider
         self.story_point_extractor = story_point_extractor
         self.time_extractor = time_extractor
 
-    def _calculate_metric(self, time_unit: TimeUnit):
-        spent_time = timeutil.Duration.of(self.total_spent_time_in_seconds, timeutil.TimeUnit.SECOND).convert(time_unit, time_policy=timeutil.BUSINESS_POLICY).time_delta
+    def _calculate_metric(self, time_unit: TimeUnit, time_policy: TimePolicy):
+        spent_time = self.total_spent_time.convert(time_unit, time_policy).time_delta
         story_points = self.total_resolved_story_points
 
         if spent_time == 0:
@@ -137,11 +137,11 @@ class GeneralizedTeamVelocityCalculator(AbstractMetricCalculator):
         return self.total_resolved_story_points
 
     def get_spent_time(self):
-        return self.total_spent_time_in_seconds
+        return self.total_spent_time
 
-    def _sum_story_points_and_worklog(self, task_story_points: float, task_total_spent_time: int):
-        if task_total_spent_time == 0:
+    def _sum_story_points_and_worklog(self, task_story_points: float, task_total_spent_time: Duration):
+        if not task_total_spent_time or task_total_spent_time.is_zero():
             return
 
         self.total_resolved_story_points += task_story_points
-        self.total_spent_time_in_seconds += task_total_spent_time
+        self.total_spent_time = self.total_spent_time.add(task_total_spent_time, unit=TimeUnit.SECOND)

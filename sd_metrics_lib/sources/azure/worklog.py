@@ -4,6 +4,7 @@ from typing import Optional
 from sd_metrics_lib.sources.abstract_worklog import AbstractStatusChangeWorklogExtractor
 from sd_metrics_lib.sources.worklog import TaskTotalSpentTimeExtractor
 from sd_metrics_lib.utils.worktime import WorkTimeExtractor, SimpleWorkTimeExtractor
+from sd_metrics_lib.utils.time import Duration, TimeUnit
 
 
 class AzureStatusChangeWorklogExtractor(AbstractStatusChangeWorklogExtractor):
@@ -114,15 +115,14 @@ class AzureTaskTotalSpentTimeExtractor(TaskTotalSpentTimeExtractor):
     def __init__(self, time_format='%Y-%m-%dT%H:%M:%S.%f%z') -> None:
         self.time_format = time_format
 
-    def get_total_spent_time(self, task) -> int:
+    def get_total_spent_time(self, task) -> Duration:
         resolution_date_str = task.fields['Microsoft.VSTS.Common.ClosedDate']
         if resolution_date_str is None:
-            return 0
+            return Duration.zero()
 
         resolution_date = self._convert_to_time(resolution_date_str)
         creation_date = self._convert_to_time(task.fields['System.CreatedDate'])
-        spent_time = (resolution_date - creation_date)
-        return int(spent_time.total_seconds())
+        return Duration.datetime_difference(creation_date, resolution_date, TimeUnit.SECOND)
 
     def _convert_to_time(self, date_string: str) -> datetime:
         try:

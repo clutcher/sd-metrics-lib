@@ -4,6 +4,7 @@ from typing import Dict, Iterable, Optional
 
 from sd_metrics_lib.sources.worklog import WorklogExtractor
 from sd_metrics_lib.utils.worktime import WorkTimeExtractor, SimpleWorkTimeExtractor
+from sd_metrics_lib.utils.time import Duration, TimeUnit
 
 
 class AbstractStatusChangeWorklogExtractor(WorklogExtractor, ABC):
@@ -19,8 +20,8 @@ class AbstractStatusChangeWorklogExtractor(WorklogExtractor, ABC):
         self.interval_start_time: Optional[datetime] = None
         self.interval_end_time: Optional[datetime] = None
 
-    def get_work_time_per_user(self, task) -> Dict[str, int]:
-        working_time_per_user: Dict[str, int] = {}
+    def get_work_time_per_user(self, task) -> Dict[str, Duration]:
+        working_time_per_user: Dict[str, Duration] = {}
 
         changelog_history = list(self._extract_chronological_changes_sequence(task))
         if not changelog_history:
@@ -132,12 +133,13 @@ class AbstractStatusChangeWorklogExtractor(WorklogExtractor, ABC):
         except Exception:
             return datetime.now()
 
-    def _sum_working_time(self, working_time_per_user: Dict[str, int], last_assigned_user: str):
+    def _sum_working_time(self, working_time_per_user: Dict[str, Duration], last_assigned_user: str):
         if self._is_interval_found_for_status_change():
-            seconds_in_status = self.worktime_extractor.extract_time_from_period(self.interval_start_time,
+            duration_in_status = self.worktime_extractor.extract_time_from_period(self.interval_start_time,
                                                                                  self.interval_end_time)
-            if seconds_in_status is not None:
-                working_time_per_user[last_assigned_user] = working_time_per_user.get(last_assigned_user, 0) + seconds_in_status
+            if duration_in_status is not None:
+                already_worked_time = working_time_per_user.get(last_assigned_user, Duration.zero())
+                working_time_per_user[last_assigned_user] = already_worked_time.add(duration_in_status, unit=TimeUnit.SECOND)
             self._clean_interval_times()
 
     def _is_interval_found_for_status_change(self):

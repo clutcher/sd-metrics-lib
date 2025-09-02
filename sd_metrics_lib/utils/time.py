@@ -22,10 +22,6 @@ WORKING_WEEKS_IN_MONTH = 4
 WEEKDAY_FRIDAY = 4
 
 
-def get_seconds_in_day(hours_in_one_day: int = WORKING_HOURS_PER_DAY) -> int:
-    return hours_in_one_day * SECONDS_IN_HOUR
-
-
 @dataclass(frozen=True, slots=True)
 class TimePolicy:
     hours_per_day: float

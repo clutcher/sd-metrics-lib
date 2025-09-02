@@ -5,6 +5,7 @@ from sd_metrics_lib.sources.worklog import WorklogExtractor
 from sd_metrics_lib.sources.abstract_worklog import AbstractStatusChangeWorklogExtractor
 from sd_metrics_lib.sources.worklog import TaskTotalSpentTimeExtractor
 from sd_metrics_lib.utils.worktime import SimpleWorkTimeExtractor, WorkTimeExtractor
+from sd_metrics_lib.utils.time import Duration, TimeUnit
 
 
 class JiraWorklogExtractor(WorklogExtractor):
@@ -23,7 +24,9 @@ class JiraWorklogExtractor(WorklogExtractor):
             if self._is_allowed_user(worklog_user):
                 worklog_time_spent = self._extract_time_in_seconds_from_worklog(worklog)
 
-                working_time_per_user[worklog_user] = working_time_per_user.get(worklog_user, 0) + worklog_time_spent
+                spent_time_from_worklog = Duration.of(worklog_time_spent, TimeUnit.SECOND)
+                already_spent_time = working_time_per_user.get(worklog_user, Duration.zero())
+                working_time_per_user[worklog_user] = already_spent_time.add(spent_time_from_worklog, unit=TimeUnit.SECOND)
 
         return working_time_per_user
 
@@ -156,13 +159,12 @@ class JiraResolutionTimeTaskTotalSpentTimeExtractor(TaskTotalSpentTimeExtractor)
     def __init__(self, time_format='%Y-%m-%dT%H:%M:%S.%f%z') -> None:
         self.time_format = time_format
 
-    def get_total_spent_time(self, task) -> int:
+    def get_total_spent_time(self, task) -> Duration:
         resolution_date_str = task['fields']['resolutiondate']
         if resolution_date_str is None:
-            return 0
+            return Duration.zero()
 
         resolution_date = datetime.strptime(resolution_date_str, self.time_format)
         creation_date = datetime.strptime(task['fields']['created'], self.time_format)
-        spent_time = (resolution_date - creation_date)
-        return int(spent_time.total_seconds())
+        return Duration.datetime_difference(creation_date, resolution_date, TimeUnit.SECOND)
 
