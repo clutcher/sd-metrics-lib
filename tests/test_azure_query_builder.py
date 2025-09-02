@@ -78,5 +78,30 @@ class AzureSearchQueryBuilderTestCase(unittest.TestCase):
         self.assertEqual(expected, query)
 
 
+    def test_assignees_history_only(self):
+        # given
+        builder = AzureSearchQueryBuilder()
+        builder.with_assignees_history(['John'])
+        # when
+        query = builder.build_query()
+        # then
+        expected = "SELECT [System.Id] FROM workitems WHERE (EVER ([System.AssignedTo] = 'John'))"
+        self.assertEqual(expected, query)
+
+    def test_assignees_history_with_project_and_order(self):
+        # given
+        builder = AzureSearchQueryBuilder(projects=['Proj1'], order_by='[System.ChangedDate] DESC')
+        builder.with_assignees_history(['John', 'Jane'])
+        # when
+        query = builder.build_query()
+        # then
+        expected = (
+            "SELECT [System.Id] FROM workitems WHERE "
+            "[System.TeamProject] IN ('Proj1') AND (EVER ([System.AssignedTo] = 'John') OR EVER ([System.AssignedTo] = 'Jane')) "
+            "ORDER BY [System.ChangedDate] DESC"
+        )
+        self.assertEqual(expected, query)
+
+
 if __name__ == '__main__':
     unittest.main()

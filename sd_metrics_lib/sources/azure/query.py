@@ -13,6 +13,7 @@ class AzureSearchQueryBuilder:
         AREA_PATH = auto()
         TASK_IDS = auto()
         ASSIGNEES = auto()
+        ASSIGNEES_HISTORY = auto()
         ORDER_BY = auto()
 
     def __init__(self,
@@ -89,6 +90,13 @@ class AzureSearchQueryBuilder:
             return
         assignees_filter = "[System.AssignedTo] IN (" + self.__convert_in_wiql_value_list(assignees) + ")"
         self.__add_filter(self.__QueryParts.ASSIGNEES, assignees_filter)
+
+    def with_assignees_history(self, assignees: list[str]):
+        if not assignees:
+            return
+        parts = [f"EVER ([System.AssignedTo] = '{a}')" for a in assignees]
+        filter_expr = "(" + " OR ".join(parts) + ")"
+        self.__add_filter(self.__QueryParts.ASSIGNEES_HISTORY, filter_expr)
 
     def with_teams(self, teams: list[str]):
         if not teams:

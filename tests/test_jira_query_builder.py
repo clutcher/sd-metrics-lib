@@ -99,5 +99,26 @@ class JiraSearchQueryBuilderTestCase(unittest.TestCase):
         self.assertEqual(expected, query)
 
 
+    def test_assignees_history_only(self):
+        # given
+        builder = JiraSearchQueryBuilder()
+        builder.with_assignees_history(['John Doe', 'Jane'])
+        # when
+        query = builder.build_query()
+        # then
+        expected = 'assignee WAS IN ("John Doe", "Jane")'
+        self.assertEqual(expected, query)
+
+    def test_assignees_history_with_project_and_order(self):
+        # given
+        builder = JiraSearchQueryBuilder(projects=['PRJ'], order_by='updated DESC')
+        builder.with_assignees_history(['User'])
+        # when
+        query = builder.build_query()
+        # then
+        expected = 'project IN (PRJ) AND assignee WAS IN ("User") ORDER BY updated DESC'
+        self.assertEqual(expected, query)
+
+
 if __name__ == '__main__':
     unittest.main()

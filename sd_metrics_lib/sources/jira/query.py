@@ -13,6 +13,7 @@ class JiraSearchQueryBuilder:
         TEAM = auto()
         TASK_IDS = auto()
         ASSIGNEES = auto()
+        ASSIGNEES_HISTORY = auto()
         ORDER_BY = auto()
 
     def __init__(self,
@@ -94,6 +95,12 @@ class JiraSearchQueryBuilder:
             return
         assignees_filter = "assignee in (" + self.__convert_in_jql_value_list(assignees) + ")"
         self.__add_filter(self.__QueryParts.ASSIGNEES, assignees_filter)
+
+    def with_assignees_history(self, assignees: Iterable[str]):
+        if not assignees:
+            return
+        assignees_filter = "assignee WAS IN (" + self.__convert_in_jql_value_list(assignees) + ")"
+        self.__add_filter(self.__QueryParts.ASSIGNEES_HISTORY, assignees_filter)
 
     def with_raw_queries(self, raw_queries: Iterable[str]):
         if not raw_queries:
