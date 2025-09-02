@@ -29,16 +29,16 @@ This library separates metric calculation from data sourcing. Calculators operat
     - `StoryPointExtractor` (abstract)
     - `ConstantStoryPointExtractor`: Returns a constant story point value (defaults to 1).
     - `FunctionStoryPointExtractor`: Wraps a callable to compute story points from a task.
-    - `AttributePathStoryPointExtractor`: Reads story points via dotted attribute/dict path and converts to float with default fallback.
+    - `AttributePathStoryPointExtractor`: Reads story points via a dotted attribute path and converts to float with default fallback.
     - Vendor implementations below: `AzureStoryPointExtractor`, `JiraCustomFieldStoryPointExtractor`, `JiraTShirtStoryPointExtractor`.
 - Module: `sd_metrics_lib.sources.worklog`
-    - `WorklogExtractor` (abstract): Returns mapping `user -> seconds` for a task.
-    - `TaskTotalSpentTimeExtractor` (abstract): Returns total time-in-seconds spent on a task.
+    - `WorklogExtractor` (abstract): Returns mapping `user -> Duration` for a task.
+    - `TaskTotalSpentTimeExtractor` (abstract): Returns total `Duration` spent on a task.
     - `ChainedWorklogExtractor`: Tries extractors in order and returns the first non-empty result.
-    - `FunctionWorklogExtractor`: Wraps a callable to produce per-user seconds dict; coerces keys to str and values to int.
-    - `FunctionTotalSpentTimeExtractor`: Wraps a callable returning total seconds; coerces to int with safe defaults.
-    - `AttributePathWorklogExtractor`: Reads a dict at a dotted attribute/dict path and normalizes keys/values.
-    - `AttributePathTotalSpentTimeExtractor`: Reads a numeric value at a dotted path and converts to int with default fallback.
+    - `FunctionWorklogExtractor`: Wraps a callable to produce per-user time dict; values must be `Duration` instances; invalid values are ignored.
+    - `FunctionTotalSpentTimeExtractor`: Wraps a callable returning a `Duration`; invalid values fall back to `Duration.zero()`.
+    - `AttributePathWorklogExtractor`: Reads a mapping at a dotted attribute path; values must be `Duration` instances; invalid values are ignored.
+    - `AttributePathTotalSpentTimeExtractor`: Reads a value at a dotted attribute path; returns it if it's a `Duration`, otherwise returns a default `Duration` (configurable).
 - Module: `sd_metrics_lib.sources.abstract_worklog`
     - `AbstractStatusChangeWorklogExtractor` (abstract): Derives work time from assignment/status change history; attributes time to assignee and respects optional user filters and `WorkTimeExtractor`.
 
@@ -78,11 +78,12 @@ This library separates metric calculation from data sourcing. Calculators operat
     - `TShirtMapping`: Helper to convert between T-shirt sizes (`XS`/`S`/`M`/`L`/`XL`) and story points using default mapping `xs=1`, `s=5`, `m=8`, `l=13`, `xl=21`.
 - Module: `sd_metrics_lib.utils.time`
     - Constants: `SECONDS_IN_HOUR`, `WORKING_HOURS_PER_DAY`, `WORKING_DAYS_PER_WEEK`, `WORKING_WEEKS_IN_MONTH`, `WEEKDAY_FRIDAY`
-    - `get_seconds_in_day(hours_in_one_day: int = WORKING_HOURS_PER_DAY) -> int`
-    - `convert_time(time_in_seconds: int, time_unit: VelocityTimeUnit, hours_in_one_day: int = WORKING_HOURS_PER_DAY, days_in_one_week: int = WORKING_DAYS_PER_WEEK, weeks_in_one_month: int = WORKING_WEEKS_IN_MONTH) -> float`
+    - Classes: `TimeUnit`, `TimePolicy` (with presets `TimePolicy.ALL_HOURS`, `TimePolicy.BUSINESS_HOURS`), `Duration`
+        - Key methods: zero(), of(), datetime_difference(), to_seconds(), convert(), is_zero(), add()/sub() and operators +/-, sum(iterable), scalar * and /.
+    - Prefer `TimePolicy.convert()` or `Duration.convert()` over manual seconds math.
 - Module: `sd_metrics_lib.utils.worktime`
     - `WorkTimeExtractor` (abstract)
-    - `SimpleWorkTimeExtractor`: Computes working seconds between two datetimes with business-day heuristics.
+    - `SimpleWorkTimeExtractor`: Computes working Duration between two datetimes with business-day heuristics.
     - `BoundarySimpleWorkTimeExtractor`: Like `SimpleWorkTimeExtractor` but clamps to [start, end] boundaries.
 - Module: `sd_metrics_lib.utils.cache`
     - `CacheProtocol` (Protocol), `DictProtocol` (Protocol)
@@ -90,7 +91,7 @@ This library separates metric calculation from data sourcing. Calculators operat
     - `CacheKeyBuilder`: Helpers to build cache keys for data/meta entries.
     - `SupersetResolver`: Finds a superset fieldset for cached data reuse.
 - Module: `sd_metrics_lib.utils.generators`
-    - `TimeRangeGenerator`: Iterator producing date ranges for the requested `VelocityTimeUnit`
+    - `TimeRangeGenerator`: Iterator producing date ranges for the requested `TimeUnit` (supports HOUR, DAY, WEEK, MONTH)
 
 ### Public API imports
 
@@ -101,7 +102,7 @@ Use the physical modules directly (no export shims):
 - Common utilities:
     - `from sd_metrics_lib.utils.enums import VelocityTimeUnit, HealthStatus, SeniorityLevel`
     - `from sd_metrics_lib.utils.storypoints import TShirtMapping`
-    - `from sd_metrics_lib.utils.time import SECONDS_IN_HOUR, WORKING_HOURS_PER_DAY, WORKING_DAYS_PER_WEEK, WORKING_WEEKS_IN_MONTH, WEEKDAY_FRIDAY, get_seconds_in_day, convert_time`
+    - `from sd_metrics_lib.utils.time import SECONDS_IN_HOUR, WORKING_HOURS_PER_DAY, WORKING_DAYS_PER_WEEK, WORKING_WEEKS_IN_MONTH, WEEKDAY_FRIDAY, TimeUnit, TimePolicy, Duration`
     - `from sd_metrics_lib.utils.worktime import WorkTimeExtractor, SimpleWorkTimeExtractor, BoundarySimpleWorkTimeExtractor`
     - `from sd_metrics_lib.utils.generators import TimeRangeGenerator`
     - `from sd_metrics_lib.utils.cache import CacheKeyBuilder, CacheProtocol, DictToCacheProtocolAdapter, SupersetResolver, DictProtocol`
@@ -121,6 +122,62 @@ Use the physical modules directly (no export shims):
     - `from sd_metrics_lib.sources.azure.worklog import AzureStatusChangeWorklogExtractor, AzureTaskTotalSpentTimeExtractor`
 
 ## Installation
+
+Install core library:
+
+```bash
+pip install sd-metrics-lib
+```
+
+Optional extras for providers:
+
+```bash
+pip install sd-metrics-lib[jira]
+pip install sd-metrics-lib[azure]
+```
+
+### At a glance (Quickstart)
+
+- Most-used class: `UserVelocityCalculator`.
+- Minimal flow: TaskProvider + StoryPointExtractor + WorklogExtractor -> `calculate()`.
+- Time model: `Duration` + `TimeUnit` + `TimePolicy` (convert using `Duration.convert(...)`).
+- Typical defaults: business-hours policy and per-day velocities.
+
+Smallest working sketch:
+
+```python
+from sd_metrics_lib.calculators.velocity import UserVelocityCalculator
+from sd_metrics_lib.utils.enums import VelocityTimeUnit
+from sd_metrics_lib.sources.tasks import ProxyTaskProvider
+from sd_metrics_lib.sources.story_points import ConstantStoryPointExtractor
+from sd_metrics_lib.sources.worklog import FunctionWorklogExtractor
+from sd_metrics_lib.utils.time import Duration, TimeUnit
+
+# Pretend we have two tasks and attribute all work to one user
+tasks = [{"id": 1}, {"id": 2}]
+provider = ProxyTaskProvider(tasks)
+sp = ConstantStoryPointExtractor(1)
+wl = FunctionWorklogExtractor(lambda t: {"user1": Duration.of(1, TimeUnit.DAY)})
+
+calc = UserVelocityCalculator(provider, sp, wl)
+print(calc.calculate(VelocityTimeUnit.DAY))  # {"user1": ~2.0 / day}
+```
+
+### Concepts
+
+- Task: A Jira issue or Azure DevOps work item fetched by a TaskProvider.
+- Story points: Numeric size measure, extracted by a StoryPointExtractor from a field or via function.
+- Worklog (derived): Time per user inferred either from native logs (Jira) or from status/assignee changes.
+- Duration: A typed quantity with unit (SECOND/HOUR/DAY/WEEK/MONTH). Convert via `Duration.convert()`.
+- TimeUnit/TimePolicy: Choose units and business vs civil time assumptions.
+
+### Interface contracts (I/O)
+
+- TaskProvider.get_tasks() -> list
+- StoryPointExtractor.get_story_points(task) -> float | None
+- WorklogExtractor.get_work_time_per_user(task) -> Dict[str, Duration]
+- TaskTotalSpentTimeExtractor.get_total_spent_time(task) -> Duration
+- Duration: `of()`, `zero()`, `convert()`, `to_seconds()`, arithmetic add/sub/sum.
 
 Install core library:
 
@@ -175,7 +232,7 @@ This example uses Azure DevOps WIQL to fetch closed items and derives time spent
 It also demonstrates enabling concurrency with a thread pool and caching results with a TTL cache.
 
 ```python
-from cachetools import TTLCache
+# from cachetools import TTLCache  # optional, for caching examples
 from concurrent.futures import ThreadPoolExecutor
 
 from azure.devops.connection import Connection
@@ -188,9 +245,8 @@ from sd_metrics_lib.sources.azure.story_points import AzureStoryPointExtractor
 from sd_metrics_lib.sources.azure.worklog import AzureStatusChangeWorklogExtractor
 from sd_metrics_lib.sources.tasks import CachingTaskProvider
 
-# Caches and thread pools
-JQL_CACHE = TTLCache(maxsize=100, ttl=600)
-jira_fetch_executor = ThreadPoolExecutor(max_workers=100, thread_name_prefix="jira-fetch")
+# Optional thread pool for faster fetching
+jira_fetch_executor = ThreadPoolExecutor(max_workers=20, thread_name_prefix="azure-fetch")
 
 ORGANIZATION_URL = 'https://dev.azure.com/your_org'
 PERSONAL_ACCESS_TOKEN = 'your_pat'
@@ -210,9 +266,8 @@ wiql = """
        ORDER BY [System.ChangedDate] DESC \
        """
 
-# Use thread pool and cache
+# Use thread pool
 task_provider = AzureTaskProvider(wit_client, query=wiql, thread_pool_executor=jira_fetch_executor)
-task_provider = CachingTaskProvider(task_provider, cache=JQL_CACHE)
 
 story_point_extractor = AzureStoryPointExtractor(default_story_points_value=1)
 worklog_extractor = AzureStatusChangeWorklogExtractor(transition_statuses=['In Progress'])
@@ -224,6 +279,108 @@ velocity = velocity_calculator.calculate(velocity_time_unit=VelocityTimeUnit.DAY
 
 print(velocity)
 ```
+
+## How velocity is computed (UserVelocityCalculator)
+
+For each task with positive story points:
+
+1) Extract per-user working time via WorklogExtractor.
+2) Compute total task time across users; skip if zero.
+3) Split the task’s story points among users proportionally to each user’s share of time.
+4) Sum per-user story points and per-user time across tasks.
+5) Convert total time to the requested TimeUnit/TimePolicy.
+6) Return story_points / time_in_unit per user (omit zero velocities).
+
+## Provider capability matrix (summary)
+
+- Jira
+    - JiraTaskProvider: JQL, paging, optional ThreadPoolExecutor, can fetch all fields for subtasks.
+    - JiraWorklogExtractor: native worklogs; filter by users; can include subtasks.
+    - JiraStatusChangeWorklogExtractor: derives work time from changelog; supports names vs accountId; status names vs codes.
+    - JiraCustomFieldStoryPointExtractor: numeric custom field by name.
+    - JiraTShirtStoryPointExtractor: T-shirt sizes -> numeric mapping.
+    - JiraResolutionTimeTaskTotalSpentTimeExtractor: duration from created to resolutiondate.
+- Azure DevOps
+    - AzureTaskProvider: WIQL, stable pagination of get_work_items; custom expand fields (updates, child tasks); optional ThreadPoolExecutor.
+    - AzureStatusChangeWorklogExtractor: derives time from updates; supports author/assignee resolution; user-filter; status filters.
+    - AzureTaskTotalSpentTimeExtractor: creation -> closed duration.
+    - AzureStoryPointExtractor: reads story points from a configurable field.
+
+## Recipes
+
+- Team velocity from resolution time (Jira):
+
+```python
+from sd_metrics_lib.calculators.velocity import GeneralizedTeamVelocityCalculator
+from sd_metrics_lib.utils.enums import VelocityTimeUnit
+from sd_metrics_lib.sources.jira.tasks import JiraTaskProvider
+from sd_metrics_lib.sources.jira.worklog import JiraResolutionTimeTaskTotalSpentTimeExtractor
+from sd_metrics_lib.sources.jira.story_points import JiraCustomFieldStoryPointExtractor
+from atlassian import Jira
+
+# Fetch resolved tasks only; no changelog needed
+jira = Jira('https://your_jira', 'login', 'password', cloud=True)
+jql = "project = 'TBC' AND resolutiondate >= 2025-01-01"
+provider = JiraTaskProvider(jira, jql)
+sp = JiraCustomFieldStoryPointExtractor('customfield_10010', default_story_points_value=1)
+spent = JiraResolutionTimeTaskTotalSpentTimeExtractor()
+team = GeneralizedTeamVelocityCalculator(provider, sp, spent)
+print(team.calculate(VelocityTimeUnit.DAY))
+```
+
+- Custom story points from nested attribute path:
+
+```python
+from sd_metrics_lib.sources.story_points import AttributePathStoryPointExtractor
+
+sp = AttributePathStoryPointExtractor('my_model.points', default=1.0)
+```
+
+- Custom worklog by callable returning Durations:
+
+```python
+from sd_metrics_lib.sources.worklog import FunctionWorklogExtractor
+from sd_metrics_lib.utils.time import Duration, TimeUnit
+
+
+def my_worklog(task):
+    return {'u1': Duration.of(3, TimeUnit.HOUR)}
+
+
+wl = FunctionWorklogExtractor(my_worklog)
+```
+
+## Troubleshooting / FAQ
+
+- I get zeros or empty results.
+    - Ensure your extractor returns Duration objects (not ints). Zero totals are skipped.
+    - Ensure tasks actually have story points > 0.
+    - For status-change extractors, include changelog/updates in additional/custom fields.
+- Time conversion seems wrong.
+    - Pass TimePolicy explicitly if you need business vs civil time: `calculate(time_policy=TimePolicy.BUSINESS_HOURS)`.
+    - Use `Duration.convert(TimeUnit.SECOND/DAY/...)` to check values step-by-step.
+- Jira user identifiers mismatch.
+    - Use JiraStatusChangeWorklogExtractor(use_user_name=True) to attribute by display name instead of accountId.
+- Azure date parsing fails.
+    - Extractors handle formats with/without milliseconds. If a custom format is needed, pass time_format.
+- Cache misses unexpectedly.
+    - CachingTaskProvider keys include query and additional_fields. Field order doesn’t matter; ensure consistent field sets.
+
+## Extending the library
+
+- Add a TaskProvider: implement get_tasks() that returns a list of your task objects.
+- Add a StoryPointExtractor: implement get_story_points(task) -> float | None.
+- Add a WorklogExtractor: implement get_work_time_per_user(task) -> Dict[str, Duration]. Return Duration objects only.
+- Add a TaskTotalSpentTimeExtractor: implement get_total_spent_time(task) -> Duration.
+
+## Supported environments
+
+- Python: 3.10+
+- Optional extras: [jira], [azure]
+
+## Security
+
+- Do not embed tokens in code; prefer environment variables or secret managers.
 
 ## Version history
 
