@@ -179,19 +179,6 @@ print(calc.calculate(VelocityTimeUnit.DAY))  # {"user1": ~2.0 / day}
 - TaskTotalSpentTimeExtractor.get_total_spent_time(task) -> Duration
 - Duration: `of()`, `zero()`, `convert()`, `to_seconds()`, arithmetic add/sub/sum.
 
-Install core library:
-
-```bash
-pip install sd-metrics-lib
-```
-
-Optional extras for providers:
-
-```bash
-pip install sd-metrics-lib[jira]
-pip install sd-metrics-lib[azure]
-```
-
 ## Code examples
 
 ### Calculate amount of tickets developer resolves per day based on Jira ticket status change history.
@@ -384,44 +371,52 @@ wl = FunctionWorklogExtractor(my_worklog)
 
 ## Version history
 
+### 6.0
+
++ (Breaking) Adopt Duration/TimeUnit/TimePolicy across the public API. Calculators and worklog extractors now use Duration. Velocity calculators accept utils.time.TimeUnit (not utils.enums.VelocityTimeUnit).
++ (Feature) Add assignee history filters to Azure and Jira query builders.
++ (Bug Fix) Quote project keys/names in Jira project IN (...) filter.
++ (Refactor) Migrate internals to Duration math with TimePolicy.
++ (Docs) Refresh README examples and API overview for the new time model.
+
 ### 5.3.0
 
-+ (Feature) add support for time conversion to seconds and customizable time units
-+ (Feature) utils.enums.VelocityTimeUnit: add `SECOND` unit to allow per-second velocity conversions.
-+ (Feature) utils.enums.HealthStatus: add `GRAY` status to represent unknown/indeterminate health.
++ (Feature) Add time conversion to seconds and customizable time units.
++ (Feature) Add SECOND to VelocityTimeUnit.
++ (Feature) Add GRAY (unknown/indeterminate) to HealthStatus.
 
 ### 5.2.4
 
-+ (Feature) Query builders (Azure, Jira): add filter by assignee.
-+ (Bug Fix) AzureSearchQueryBuilder: team filter now uses `IN (...)` and supports multiple teams.
++ (Feature) Add assignee filter to Azure and Jira query builders.
++ (Bug Fix) Azure: use IN (...) for team filter; support multiple teams.
 
 ### 5.2.3
 
-+ (Feature) utils.time.convert_time: add optional parameter `ideal_working_hours_per_day` to support non-standard working-hours-per-day when converting to DAY/WEEK/MONTH; default preserves previous behavior.
-+ (Improvement) AzureStatusChangeWorklogExtractor: when `use_user_name=True`, prefer `displayName`, then `uniqueName` (email/login), and only then fallback to `id`.
++ (Feature) Add ideal_working_hours_per_day option to utils.time.convert_time for non-standard working days.
++ (Improvement) When use_user_name=True, prefer displayName, then uniqueName, then id in AzureStatusChangeWorklogExtractor.
 
 ### 5.2.2
 
-+ (Bug Fix) AzureTaskProvider: fetch custom expand fields for child tasks
-+ (Bug Fix) AzureStatusChangeWorklogExtractor: improve change time resolution by preferring StateChangeDate/ChangedDate
++ (Bug Fix) Fetch custom expand fields for child tasks in AzureTaskProvider.
++ (Bug Fix) Prefer StateChangeDate/ChangedDate for change time in AzureStatusChangeWorklogExtractor.
 
 ### 5.2.1
 
-+ (Bug Fix) AzureStatusChangeWorklogExtractor: use revised_date as the change timestamp; also accept datetime objects; handle Azure times without milliseconds
++ (Bug Fix) Use revised_date as change timestamp; accept datetime objects; handle times without milliseconds in AzureStatusChangeWorklogExtractor.
 
 ### 5.2
 
-+ (Feature) Status-change worklog extractors: infer assignee from status-change author when last assigned is unknown (handles items created pre-assigned with only subsequent status changes)
-+ (Fix) AzureStatusChangeWorklogExtractor: support using either user name or user id when resolving assignees
-+ (Fix) AzureStatusChangeWorklogExtractor: use revisedDate as the change timestamp basis instead of CreatedDate for correctness
-+ (Fix) Abstract status-change worklog: correctly handle a single changelog entry that changes both assignee and status at once
++ (Feature) Infer assignee from status-change author when last assigned is unknown in status-change worklog extractors.
++ (Bug Fix) Support resolving by user name or user id in AzureStatusChangeWorklogExtractor.
++ (Bug Fix) Use revisedDate as change timestamp (not CreatedDate) in AzureStatusChangeWorklogExtractor.
++ (Bug Fix) Handle a single entry that changes assignee and status at once in abstract status-change worklog.
 
 ### 5.1
 
-+ (Feature) AzureTaskProvider: add support for child tasks fetching via custom expand field 'CustomExpand.ChildTasks'
-+ (Feature) JiraTaskProvider: fetch all fields for subtasks when 'subtasks' is requested
-+ (Bug Fix) JiraSearchQueryBuilder: do not add filter clauses for empty iterables (avoid broken JQL)
-+ (Bug Fix) AzureStatusChangeWorklogExtractor: use user id instead of uniqueName for proper log extraction
++ (Feature) Add child tasks via custom expand field 'CustomExpand.ChildTasks' in AzureTaskProvider.
++ (Feature) Fetch all fields for subtasks when 'subtasks' is requested in JiraTaskProvider.
++ (Bug Fix) Skip filters for empty iterables in JiraSearchQueryBuilder (avoid broken JQL).
++ (Bug Fix) Use user id instead of uniqueName for proper log extraction in AzureStatusChangeWorklogExtractor.
 
 ### 5.0.2
 
@@ -435,9 +430,9 @@ wl = FunctionWorklogExtractor(my_worklog)
 
 + (Breaking) Restructure packages and rename files for better import Developer Experience.
 
-+ (Feature) Add proxy style classes for extractors
-+ (Bug Fix) Fix tasks id adding in query builders
-+ (Bug Fix) Fix not working custom expand field in AzureTaskProvider
++ (Feature) Add proxy-style classes for extractors
++ (Bug Fix) Fix task id adding in query builders
++ (Bug Fix) Fix custom expand field in AzureTaskProvider
 
 ### 4.0
 
@@ -451,8 +446,8 @@ wl = FunctionWorklogExtractor(my_worklog)
 + (Breaking) Change package and method names in JiraSearchQueryBuilder
 
 + (Feature) Introduce AzureSearchQueryBuilder
-+ (Feature) AzureTaskProvider: make changelog history optional via additional fields
-+ (Feature) Extend JiraSearchQueryBuilder: custom raw filters; filter by Team; open-ended resolution date
++ (Feature) Make changelog history optional via additional fields in AzureTaskProvider
++ (Feature) Extend JiraSearchQueryBuilder with custom raw filters; filter by Team; open-ended resolution date
 + (Feature) Rewrite CachingTaskProvider to support Django caches
 + (Feature) Introduce AzureSearchQueryBuilder
 + (Bug Fix) Azure: fetch all tasks beyond 20k limit using stable pagination
