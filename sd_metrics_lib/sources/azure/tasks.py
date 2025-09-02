@@ -5,6 +5,7 @@ from typing import Iterable, List, Optional, Dict
 from azure.devops.v7_1.work_item_tracking.models import Wiql
 
 from sd_metrics_lib.sources.tasks import TaskProvider
+from sd_metrics_lib.utils.cache import CacheProtocol, CacheKeyBuilder
 
 
 class AzureTaskProvider(TaskProvider):
@@ -32,13 +33,15 @@ class AzureTaskProvider(TaskProvider):
     def __init__(self, azure_client, query: str,
                  additional_fields: Optional[Iterable[str]] = None,
                  custom_expand_fields: Optional[Iterable[str]] = None,
-                 page_size: int = 200, thread_pool_executor: Optional[ThreadPoolExecutor] = None) -> None:
+                 page_size: int = 200, thread_pool_executor: Optional[ThreadPoolExecutor] = None,
+                 cache: Optional[CacheProtocol] = None) -> None:
         self.azure_client = azure_client
         self.query = query.strip()
         self.additional_fields = list(additional_fields) if additional_fields is not None else list(self.DEFAULT_FIELDS)
         self.custom_expand_fields = custom_expand_fields or []
         self.page_size = max(1, page_size)
         self.thread_pool_executor = thread_pool_executor
+        self.cache = cache
 
     def get_tasks(self) -> list:
         task_ids = self._fetch_task_ids_paginated()
@@ -110,7 +113,19 @@ class AzureTaskProvider(TaskProvider):
 
     def _attach_changelog_history(self, tasks: List[object]):
         def fetch_changelog_history(item):
-            item.fields[self.WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME] = self.azure_client.get_updates(item.id)
+            parts = ["updates", str(getattr(item, 'id', None))]
+            key = CacheKeyBuilder.create_provider_custom_key(self.__class__, parts)
+
+            if getattr(self, 'cache', None) is not None:
+                cached = self.cache.get(key)
+                if cached is not None:
+                    item.fields[self.WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME] = cached
+                    return
+
+            updates = self.azure_client.get_updates(item.id)
+            item.fields[self.WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME] = updates
+            if getattr(self, 'cache', None) is not None:
+                self.cache.set(key, updates)
 
         if self.thread_pool_executor is None:
             for task in tasks:

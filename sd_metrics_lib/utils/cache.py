@@ -33,6 +33,7 @@ class DictToCacheProtocolAdapter(CacheProtocol):
 class CacheKeyBuilder:
     DATA_PREFIX = "data||"
     META_PREFIX = "meta||"
+    CUSTOM_PREFIX = "custom||"
 
     @staticmethod
     def normalize_fields(fields: Optional[Iterable[str]]) -> List[str]:
@@ -56,6 +57,20 @@ class CacheKeyBuilder:
     @staticmethod
     def create_meta_data_key(query_only_key_partial: str) -> str:
         return f"{CacheKeyBuilder.META_PREFIX}{query_only_key_partial}fieldsets"
+
+    @staticmethod
+    def create_provider_custom_key(provider_cls: object, parts: Optional[Iterable[str]]) -> str:
+        try:
+            cls = provider_cls if isinstance(provider_cls, type) else provider_cls.__class__
+            name = getattr(cls, '__name__', '') or str(cls)
+            provider_ns = name
+        except Exception:
+            provider_ns = str(provider_cls)
+        normalized_parts = CacheKeyBuilder.normalize_fields(parts)
+        head = f"{CacheKeyBuilder.CUSTOM_PREFIX}{provider_ns}||"
+        if not normalized_parts:
+            return head
+        return head + "_".join(normalized_parts)
 
 
 class SupersetResolver:

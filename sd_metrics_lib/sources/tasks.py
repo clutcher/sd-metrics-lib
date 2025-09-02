@@ -40,6 +40,12 @@ class CachingTaskProvider(TaskProvider):
         self.query = getattr(provider, 'query', None)
         self.additional_fields = getattr(provider, 'additional_fields', None)
 
+        if self.cache is not None and hasattr(self.provider, 'cache'):
+            try:
+                setattr(self.provider, 'cache', self.cache)
+            except Exception:
+                pass
+
     def get_tasks(self):
         cached = self._try_fetch_from_cache()
         if cached is not None:
@@ -65,21 +71,21 @@ class CachingTaskProvider(TaskProvider):
     def _store_in_cache(self, tasks):
         if self.cache is None:
             return
-        normalized_fields = CacheKeyBuilder.normalize_fields(self.additional_fields)
+        normalized_fields = self._effective_fields_for_key()
         self._store_tasks_under_data_key(tasks, normalized_fields)
         self._ensure_fieldset_list_updated(normalized_fields)
 
     def _fetch_exact_cache_hit(self):
         partial_key = CacheKeyBuilder.create_query_only_key_partial(self.query)
         data_key = CacheKeyBuilder.create_full_data_key(partial_key,
-                                                        CacheKeyBuilder.normalize_fields(self.additional_fields))
+                                                        self._effective_fields_for_key())
         hit = self.cache.get(data_key)  # type: ignore[union-attr]
         if hit is not None:
             return hit
         return None
 
     def _fetch_superset_cache_hit(self):
-        requested_fields = CacheKeyBuilder.normalize_fields(self.additional_fields)
+        requested_fields = self._effective_fields_for_key()
         meta_key = CacheKeyBuilder.create_meta_data_key(CacheKeyBuilder.create_query_only_key_partial(self.query))
         available_fieldsets = self._load_cached_fieldsets(meta_key)
         compatible_available_fieldset = SupersetResolver.find_superset_fieldset(requested_fields, available_fieldsets)
@@ -91,6 +97,12 @@ class CachingTaskProvider(TaskProvider):
             if superset_value is not None:
                 return superset_value
         return None
+
+    def _effective_fields_for_key(self) -> List[str]:
+        base = CacheKeyBuilder.normalize_fields(self.additional_fields)
+        expand = CacheKeyBuilder.normalize_fields(getattr(self.provider, 'custom_expand_fields', None))
+        combined = base + [f for f in expand if f not in base]
+        return CacheKeyBuilder.normalize_fields(combined)
 
     def _store_tasks_under_data_key(self, tasks, fields: Iterable[str]):
         partial_key = CacheKeyBuilder.create_query_only_key_partial(self.query)
