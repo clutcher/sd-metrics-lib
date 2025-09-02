@@ -369,6 +369,10 @@ wl = FunctionWorklogExtractor(my_worklog)
 
 ## Version history
 
+### 6.2.1
+
++ (Feature) Support internal caching of get worklog requests inside AzureTaskProvider
+
 ### 6.2.0
 
 + (Feature) Support math and comparison operations of Duration with float/int.
