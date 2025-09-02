@@ -45,7 +45,7 @@ class JiraSearchQueryBuilder:
     def with_projects(self, projects: Iterable[str]):
         if not projects:
             return
-        project_filter = "project IN (" + ",".join(projects) + ")"
+        project_filter = "project IN (" + self.__convert_in_jql_value_list(projects) + ")"
         self.__add_filter(self.__QueryParts.PROJECT, project_filter)
 
     def with_statuses(self, statuses: Iterable[str]):

@@ -39,7 +39,7 @@ class JiraSearchQueryBuilderTestCase(unittest.TestCase):
         query = builder.build_query()
         # then
         expected = (
-            "project IN (PRJ)"
+            "project IN (\"PRJ\")"
             " AND status in (\"In Progress\", \"Done\")"
             " AND resolutiondate >= '2022-01-01' and resolutiondate <= '2022-01-31'"
             " AND issuetype in (\"Story\", \"Bug\")"
@@ -76,7 +76,7 @@ class JiraSearchQueryBuilderTestCase(unittest.TestCase):
         query = builder.build_query()
         # then
         expected = (
-            "project IN (PRJ)"
+            "project IN (\"PRJ\")"
             " AND status in (\"In Progress\", \"Done\")"
             " AND resolutiondate >= '2022-01-01' and resolutiondate <= '2022-01-31'"
             " AND issuetype in (\"Story\", \"Bug\")"
@@ -116,7 +116,7 @@ class JiraSearchQueryBuilderTestCase(unittest.TestCase):
         # when
         query = builder.build_query()
         # then
-        expected = 'project IN (PRJ) AND assignee WAS IN ("User") ORDER BY updated DESC'
+        expected = 'project IN ("PRJ") AND assignee WAS IN ("User") ORDER BY updated DESC'
         self.assertEqual(expected, query)
 
 
