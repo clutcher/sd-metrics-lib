@@ -123,74 +123,125 @@ class Duration:
             return self.time_delta == 0
         return abs(self.to_seconds(time_policy)) <= eps
 
-    # Arithmetic helpers
     def add(self, other: "Duration", policy: TimePolicy | None = None, unit: TimeUnit | None = None) -> "Duration":
         unit_used = unit or self.time_unit
         policy_used = policy or TimePolicy.ALL_HOURS
-        a = policy_used.convert(self.time_delta, self.time_unit, unit_used)
-        b = policy_used.convert(other.time_delta, other.time_unit, unit_used)
-        return Duration.of(a + b, unit_used)
+        self_value_in_unit = policy_used.convert(self.time_delta, self.time_unit, unit_used)
+        other_value_in_unit = policy_used.convert(other.time_delta, other.time_unit, unit_used)
+        return Duration.of(self_value_in_unit + other_value_in_unit, unit_used)
 
     def sub(self, other: "Duration", policy: TimePolicy | None = None, unit: TimeUnit | None = None) -> "Duration":
         unit_used = unit or self.time_unit
         policy_used = policy or TimePolicy.ALL_HOURS
-        a = policy_used.convert(self.time_delta, self.time_unit, unit_used)
-        b = policy_used.convert(other.time_delta, other.time_unit, unit_used)
-        return Duration.of(a - b, unit_used)
+        self_value_in_unit = policy_used.convert(self.time_delta, self.time_unit, unit_used)
+        other_value_in_unit = policy_used.convert(other.time_delta, other.time_unit, unit_used)
+        return Duration.of(self_value_in_unit - other_value_in_unit, unit_used)
 
-    def __add__(self, other: "Duration") -> "Duration":
-        return self.add(other)
+    @staticmethod
+    def _coerce_value_in_unit(other: object, target_unit: TimeUnit,
+                              time_policy: TimePolicy | None = None) -> float | None:
+        if isinstance(other, Duration):
+            effective_policy = time_policy or TimePolicy.ALL_HOURS
+            return effective_policy.convert(other.time_delta, other.time_unit, target_unit)
+        if isinstance(other, (int, float)):
+            return float(other)
+        return None
 
-    def __sub__(self, other: "Duration") -> "Duration":
-        return self.sub(other)
+    def __add__(self, other: object) -> "Duration":
+        coerced_value = self._coerce_value_in_unit(other, self.time_unit)
+        if coerced_value is None:
+            return NotImplemented
+        return Duration.of(self.time_delta + coerced_value, self.time_unit)
 
-    def __iadd__(self, other: "Duration") -> "Duration":
-        return self.add(other)
+    def __radd__(self, other: object) -> "Duration":
+        coerced_value = self._coerce_value_in_unit(other, self.time_unit)
+        if coerced_value is None:
+            return NotImplemented
+        return Duration.of(coerced_value + self.time_delta, self.time_unit)
 
-    def __isub__(self, other: "Duration") -> "Duration":
-        return self.sub(other)
+    def __sub__(self, other: object) -> "Duration":
+        coerced_value = self._coerce_value_in_unit(other, self.time_unit)
+        if coerced_value is None:
+            return NotImplemented
+        return Duration.of(self.time_delta - coerced_value, self.time_unit)
 
-    def __mul__(self, k: SupportsFloat) -> "Duration":
-        return Duration.of(float(self.time_delta) * float(k), self.time_unit)
+    def __rsub__(self, other: object) -> "Duration":
+        coerced_value = self._coerce_value_in_unit(other, self.time_unit)
+        if coerced_value is None:
+            return NotImplemented
+        return Duration.of(coerced_value - self.time_delta, self.time_unit)
 
-    def __truediv__(self, k: SupportsFloat) -> "Duration":
-        return Duration.of(float(self.time_delta) / float(k), self.time_unit)
+    def __iadd__(self, other: object) -> "Duration":
+        coerced_value = self._coerce_value_in_unit(other, self.time_unit)
+        if coerced_value is None:
+            return NotImplemented  # type: ignore[return-value]
+        return Duration.of(self.time_delta + coerced_value, self.time_unit)
 
-    def __bool__(self) -> bool:
-        # treat exact zero as False
-        return self.time_delta != 0
+    def __isub__(self, other: object) -> "Duration":
+        coerced_value = self._coerce_value_in_unit(other, self.time_unit)
+        if coerced_value is None:
+            return NotImplemented  # type: ignore[return-value]
+        return Duration.of(self.time_delta - coerced_value, self.time_unit)
 
-    # Ordering comparisons compare using ALL_HOURS policy
-    def _cmp_seconds(self, other: "Duration") -> float | None:
-        if not isinstance(other, Duration):
-            return None
-        a = self.to_seconds(TimePolicy.ALL_HOURS)
-        b = other.to_seconds(TimePolicy.ALL_HOURS)
-        return a - b
+    def __mul__(self, multiplier: SupportsFloat) -> "Duration":
+        return Duration.of(float(self.time_delta) * float(multiplier), self.time_unit)
+
+    def __rmul__(self, multiplier: SupportsFloat) -> "Duration":
+        return Duration.of(float(multiplier) * float(self.time_delta), self.time_unit)
+
+    def __truediv__(self, other: object):
+        if isinstance(other, (int, float)):
+            return Duration.of(float(self.time_delta) / float(other), self.time_unit)
+        if isinstance(other, Duration):
+            denominator_value = self._coerce_value_in_unit(other, self.time_unit)
+            if denominator_value is None:
+                return NotImplemented
+            return float(self.time_delta) / float(denominator_value)
+        return NotImplemented
+
+    def _cmp_seconds(self, other: object) -> float | None:
+        if isinstance(other, Duration):
+            self_seconds = self.to_seconds(TimePolicy.ALL_HOURS)
+            other_seconds = other.to_seconds(TimePolicy.ALL_HOURS)
+            return self_seconds - other_seconds
+        if isinstance(other, (int, float)):
+            self_value = self.time_delta
+            other_value = float(other)
+            return self_value - other_value
+        return None
+
+    def __eq__(self, other: object) -> bool:
+        comparison_diff = self._cmp_seconds(other)
+        if comparison_diff is None:
+            return NotImplemented
+        return comparison_diff == 0
 
     def __lt__(self, other: object) -> bool:
-        diff = self._cmp_seconds(other) if isinstance(other, Duration) else None
-        if diff is None:
+        comparison_diff = self._cmp_seconds(other)
+        if comparison_diff is None:
             return NotImplemented
-        return diff < 0
+        return comparison_diff < 0
 
     def __le__(self, other: object) -> bool:
-        diff = self._cmp_seconds(other) if isinstance(other, Duration) else None
-        if diff is None:
+        comparison_diff = self._cmp_seconds(other)
+        if comparison_diff is None:
             return NotImplemented
-        return diff <= 0
+        return comparison_diff <= 0
 
     def __gt__(self, other: object) -> bool:
-        diff = self._cmp_seconds(other) if isinstance(other, Duration) else None
-        if diff is None:
+        comparison_diff = self._cmp_seconds(other)
+        if comparison_diff is None:
             return NotImplemented
-        return diff > 0
+        return comparison_diff > 0
 
     def __ge__(self, other: object) -> bool:
-        diff = self._cmp_seconds(other) if isinstance(other, Duration) else None
-        if diff is None:
+        comparison_diff = self._cmp_seconds(other)
+        if comparison_diff is None:
             return NotImplemented
-        return diff >= 0
+        return comparison_diff >= 0
+
+    def __bool__(self) -> bool:
+        return self.time_delta != 0
 
     @staticmethod
     def sum(durations: "Iterable[Duration]", policy: TimePolicy | None = None,
@@ -198,6 +249,6 @@ class Duration:
         policy_used = policy or TimePolicy.ALL_HOURS
         total = 0.0
         if durations:
-            for d in durations:
-                total += policy_used.convert(d.time_delta, d.time_unit, unit)
+            for duration in durations:
+                total += policy_used.convert(duration.time_delta, duration.time_unit, unit)
         return Duration.of(total, unit)
