@@ -1,13 +1,17 @@
 import datetime
 from abc import ABC, abstractmethod
 
-from sd_metrics_lib.utils.time import WEEKDAY_FRIDAY, Duration, TimeUnit, TimePolicy
+from sd_metrics_lib.utils.time import Duration, TimeUnit, TimePolicy
 
 
 class WorkTimeExtractor(ABC):
 
     @abstractmethod
-    def extract_time_from_period(self, start_time_period: datetime.date | datetime.datetime, end_time_period: datetime.date | datetime.datetime) -> Duration | None:
+    def extract_time_from_period(self,
+                                 start_time_period: datetime.date | datetime.datetime,
+                                 end_time_period: datetime.date | datetime.datetime,
+                                 time_policy: TimePolicy = TimePolicy.BUSINESS_HOURS,
+                                 result_unit: TimeUnit = TimeUnit.SECOND) -> Duration | None:
         pass
 
 
@@ -15,55 +19,60 @@ class SimpleWorkTimeExtractor(WorkTimeExtractor):
 
     def extract_time_from_period(self,
                                  start_time_period: datetime.date | datetime.datetime,
-                                 end_time_period: datetime.date | datetime.datetime) -> Duration | None:
+                                 end_time_period: datetime.date | datetime.datetime,
+                                 time_policy: TimePolicy = TimePolicy.BUSINESS_HOURS,
+                                 result_unit: TimeUnit = TimeUnit.SECOND) -> Duration | None:
         if end_time_period <= start_time_period:
             return None
 
-        # Compute civil elapsed time only in seconds; derive days when needed via conversion
-        period_duration = Duration.datetime_difference(start_time_period, end_time_period, TimeUnit.SECOND)
+        calendar_elapsed_seconds = Duration.datetime_difference(start_time_period, end_time_period, TimeUnit.SECOND)
 
-        # Ignore short periods
-        minimal_period_length_limit = Duration.of(0.25, TimeUnit.HOUR).convert(TimeUnit.SECOND)
-        if period_duration < minimal_period_length_limit:
+        minimum_trackable_duration_seconds = Duration.of(0.25, TimeUnit.HOUR).convert(TimeUnit.SECOND)
+        if calendar_elapsed_seconds < minimum_trackable_duration_seconds:
             return None
 
-        # Limit multiday periods with week working days and work working hours in a day
-        # In other words, a full week period is converted into 5 days with 8 hours in each day
-        period_duration_in_days = period_duration.convert(TimeUnit.DAY)
-        if period_duration_in_days.time_delta >= 1.0:
-            work_days = self.__count_work_days(start_time_period, end_time_period)
-            round_up_period_days = int(period_duration_in_days.time_delta) + 1
-            return Duration.of(min(work_days, round_up_period_days), TimeUnit.DAY).convert(TimeUnit.SECOND, TimePolicy.BUSINESS_HOURS)
+        if time_policy == TimePolicy.ALL_HOURS:
+            return calendar_elapsed_seconds.convert(result_unit, TimePolicy.ALL_HOURS)
 
-        # Limit 24-hour period with working hours in a single day
-        one_business_day = Duration.of(1, TimeUnit.DAY).convert(TimeUnit.SECOND, TimePolicy.BUSINESS_HOURS)
-        if period_duration.time_delta < one_business_day.time_delta:
-            return period_duration
-        return one_business_day
+        business_candidate_duration_seconds = calendar_elapsed_seconds
+
+        multi_day_span_in_calendar_days = business_candidate_duration_seconds.convert(TimeUnit.DAY, TimePolicy.ALL_HOURS)
+        if multi_day_span_in_calendar_days.time_delta >= 1.0:
+            working_days_count = self.__count_work_days_policy_aware(start_time_period, end_time_period, time_policy)
+            rounded_up_calendar_days = int(multi_day_span_in_calendar_days.time_delta) + 1
+            capped_business_seconds = Duration.of(min(working_days_count, rounded_up_calendar_days), TimeUnit.DAY).convert(TimeUnit.SECOND, time_policy)
+            return capped_business_seconds.convert(result_unit, time_policy)
+
+        one_business_day_seconds = Duration.of(1, TimeUnit.DAY).convert(TimeUnit.SECOND, time_policy)
+        if business_candidate_duration_seconds.time_delta < one_business_day_seconds.time_delta:
+            return business_candidate_duration_seconds.convert(result_unit, time_policy)
+        return one_business_day_seconds.convert(result_unit, time_policy)
 
     @staticmethod
-    def __count_work_days(start_date: datetime.date, end_date: datetime.date):
-        # Move start forward to Monday if it falls on weekend
-        if start_date.weekday() > WEEKDAY_FRIDAY:
-            start_date = start_date + datetime.timedelta(days=7 - start_date.weekday())
-        # Move end backward to Friday if it falls on weekend
-        if end_date.weekday() > WEEKDAY_FRIDAY:
-            end_date = end_date - datetime.timedelta(days=end_date.weekday() - WEEKDAY_FRIDAY)
+    def __count_work_days_policy_aware(start_date: datetime.date, end_date: datetime.date, policy: TimePolicy) -> int:
+        working_days_per_week_as_int = int(policy.days_per_week)
+        if working_days_per_week_as_int <= 0:
+            return 0
+        last_workday_weekday_index = working_days_per_week_as_int - 1
+
+        if start_date.weekday() > last_workday_weekday_index:
+            start_date = start_date + datetime.timedelta(days=(7 - start_date.weekday()))
+        if end_date.weekday() > last_workday_weekday_index:
+            end_date = end_date - datetime.timedelta(days=(end_date.weekday() - last_workday_weekday_index))
 
         if start_date > end_date:
             return 0
 
-        # Inclusive range
-        total_days = (end_date - start_date).days + 1
-        full_weeks = total_days // 7
-        remainder = total_days % 7
+        inclusive_span_days = (end_date - start_date).days + 1
+        full_weeks_in_span = inclusive_span_days // 7
+        trailing_days_beyond_full_weeks = inclusive_span_days % 7
 
-        workdays = full_weeks * 5
-        start_wd = start_date.weekday()
-        for i in range(remainder):
-            if (start_wd + i) % 7 <= WEEKDAY_FRIDAY:
-                workdays += 1
-        return workdays
+        working_days = full_weeks_in_span * working_days_per_week_as_int
+        start_weekday_index = start_date.weekday()
+        for day_offset in range(trailing_days_beyond_full_weeks):
+            if (start_weekday_index + day_offset) % 7 <= last_workday_weekday_index:
+                working_days += 1
+        return working_days
 
 SIMPLE_WORKTIME_EXTRACTOR = SimpleWorkTimeExtractor()
 
@@ -75,7 +84,11 @@ class BoundarySimpleWorkTimeExtractor(SimpleWorkTimeExtractor):
         self.start_time_boundary = start_time_boundary
         self.end_time_boundary = end_time_boundary
 
-    def extract_time_from_period(self, start_time_period: datetime.date | datetime.datetime, end_time_period: datetime.date | datetime.datetime) -> Duration | None:
+    def extract_time_from_period(self,
+                                 start_time_period: datetime.date | datetime.datetime,
+                                 end_time_period: datetime.date | datetime.datetime,
+                                 time_policy: TimePolicy = TimePolicy.BUSINESS_HOURS,
+                                 result_unit: TimeUnit = TimeUnit.SECOND) -> Duration | None:
 
         if self.start_time_boundary < start_time_period:
             new_start_period = start_time_period
@@ -87,4 +100,4 @@ class BoundarySimpleWorkTimeExtractor(SimpleWorkTimeExtractor):
         else:
             new_end_time_period = self.end_time_boundary
 
-        return super().extract_time_from_period(new_start_period, new_end_time_period)
+        return super().extract_time_from_period(new_start_period, new_end_time_period, time_policy, result_unit)
