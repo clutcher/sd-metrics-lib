@@ -369,6 +369,11 @@ wl = FunctionWorklogExtractor(my_worklog)
 
 ## Version history
 
+### 6.3.0
+
++ (Feature) Add support of custom TimePolicy in SimpleWorkTimeExtractor
++ (Bug Fix) Fix wrong time assignment in Azure DevOps for status and user change in same worklog
+
 ### 6.2.1
 
 + (Feature) Support internal caching of get worklog requests inside AzureTaskProvider

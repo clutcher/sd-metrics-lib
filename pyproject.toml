@@ -4,7 +4,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = "sd-metrics-lib"
-version = "6.2.1"
+version = "6.3.0"
 description = "Library to calculate various metrics of software development process"
 readme = "README.md"
 requires-python = ">=3.9"
