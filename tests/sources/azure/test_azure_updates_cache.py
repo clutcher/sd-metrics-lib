@@ -51,76 +51,108 @@ class AzureUpdatesCachingTests(unittest.TestCase):
             cache=cache,
         )
 
-    def test_cache_hit_skips_azure_get_updates(self):
+    def _run_cache_hit_scenario(self):
         # given: pre-populated cache entry for item id 1
         cache = InMemoryCache()
         azure = StubAzureClient(work_item_ids=(1,))
         provider = self._create_provider(azure, cache)
-
         cache_key = CacheKeyBuilder.create_provider_custom_key(AzureTaskProvider, ["updates", "1"])
         cached_value = ["CACHED_UPDATE_1"]
         cache.set(cache_key, cached_value)
-
         # when
         tasks = provider.get_tasks()
+        return azure, tasks, cached_value
 
-        # then: no azure_client.get_updates calls and value pulled from cache
+    def test_cache_hit_skips_azure_get_updates_has_no_calls(self):
+        # when
+        azure, tasks, cached_value = self._run_cache_hit_scenario()
+        # then
         self.assertEqual(azure.get_updates_calls, [])
-        self.assertEqual(len(tasks), 1)
+
+    def test_cache_hit_skips_azure_get_updates_returns_cached_value(self):
+        # when
+        azure, tasks, cached_value = self._run_cache_hit_scenario()
+        # then
         self.assertEqual(
             tasks[0].fields[AzureTaskProvider.WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME],
             cached_value,
         )
 
-    def test_cache_miss_fetches_and_populates_cache_then_reuses(self):
+    def test_cache_hit_skips_azure_get_updates_returns_single_task(self):
+        # when
+        azure, tasks, cached_value = self._run_cache_hit_scenario()
+        # then
+        self.assertEqual(len(tasks), 1)
+
+    def _run_cache_miss_then_hit_scenario(self):
         # given
         cache = InMemoryCache()
         azure = StubAzureClient(work_item_ids=(1,))
         provider = self._create_provider(azure, cache)
-
         # when: first run should miss and fetch updates from Azure
         tasks_first = provider.get_tasks()
+        expected_key = CacheKeyBuilder.create_provider_custom_key(AzureTaskProvider, ["updates", "1"])
+        # when: second run should be cache hit (no extra azure calls)
+        tasks_second = provider.get_tasks()
+        return azure, cache, expected_key, tasks_first, tasks_second
 
+    def test_cache_miss_fetches_and_populates_cache_once(self):
+        # when
+        azure, cache, expected_key, tasks_first, tasks_second = self._run_cache_miss_then_hit_scenario()
         # then
         self.assertEqual(azure.get_updates_calls, [1])
-        expected_key = CacheKeyBuilder.create_provider_custom_key(AzureTaskProvider, ["updates", "1"])
+
+    def test_cache_miss_populates_cache_key(self):
+        # when
+        azure, cache, expected_key, tasks_first, tasks_second = self._run_cache_miss_then_hit_scenario()
+        # then
         self.assertIn(expected_key, cache.store)
+
+    def test_cache_miss_then_reuse_tasks_first_contains_update(self):
+        # when
+        azure, cache, expected_key, tasks_first, tasks_second = self._run_cache_miss_then_hit_scenario()
+        # then
         self.assertEqual(
             tasks_first[0].fields[AzureTaskProvider.WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME],
             ["update_for_1"],
         )
 
-        # when: second run should be cache hit (no extra azure calls)
-        tasks_second = provider.get_tasks()
-
+    def test_cache_miss_then_reuse_tasks_second_contains_update(self):
+        # when
+        azure, cache, expected_key, tasks_first, tasks_second = self._run_cache_miss_then_hit_scenario()
         # then
-        self.assertEqual(azure.get_updates_calls, [1])  # still only one call
         self.assertEqual(
             tasks_second[0].fields[AzureTaskProvider.WORK_ITEM_UPDATES_CUSTOM_FIELD_NAME],
             ["update_for_1"],
         )
 
-    def test_concurrent_execution_populates_cache_for_each_item(self):
-        # given multiple IDs and thread pool
+    def _run_concurrent_execution_scenario(self):
         cache = InMemoryCache()
         item_ids = (1, 2, 3)
         azure = StubAzureClient(work_item_ids=item_ids)
         provider = self._create_provider(azure, cache, use_threads=True)
+        provider.get_tasks()  # first run invokes get_updates per id
+        return cache, item_ids, azure, provider
 
-        # when: first run invokes get_updates per id
-        provider.get_tasks()
-
-        # then: all ids should have been fetched
+    def test_concurrent_execution_populates_cache_for_each_item_all_ids_fetched(self):
+        # when
+        cache, item_ids, azure, provider = self._run_concurrent_execution_scenario()
+        # then
         self.assertCountEqual(azure.get_updates_calls, list(item_ids))
 
-        # when: clear call history and run again
+    def test_concurrent_execution_second_run_uses_cache_no_new_calls(self):
+        # given
+        cache, item_ids, azure, provider = self._run_concurrent_execution_scenario()
+        # when
         azure.get_updates_calls.clear()
         provider.get_tasks()
-
-        # then: cache used, no new azure calls
+        # then
         self.assertEqual(azure.get_updates_calls, [])
 
-        # and cache contains keys
+    def test_concurrent_execution_cache_contains_keys(self):
+        # when
+        cache, item_ids, azure, provider = self._run_concurrent_execution_scenario()
+        # then
         for item_id in item_ids:
             key = CacheKeyBuilder.create_provider_custom_key(AzureTaskProvider, ["updates", str(item_id)])
             self.assertIn(key, cache.store)

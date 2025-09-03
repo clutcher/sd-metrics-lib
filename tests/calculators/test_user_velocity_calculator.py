@@ -47,6 +47,22 @@ class VelocityCalculatorTestCase(unittest.TestCase):
 
         # then
         self.assertEqual(1, len(velocity.keys()), 'Missing calculated velocity data')
+
+    def test_should_calculate_velocity_for_one_worklog_value_for_test_user(self):
+        # given
+        histories = self.__create_history_entries_with_status_change()
+        task = self.__create_task_with_log_data(histories)
+        task_provider = ProxyTaskProvider([task])
+        t_shirt_story_point_extractor = JiraCustomFieldStoryPointExtractor('customfield_00000')
+        jira_worklog_extractor = JiraStatusChangeWorklogExtractor(['12207'],
+                                                                  time_format='%Y-%m-%dT%H:%M:%S.%f%z',
+                                                                  use_status_codes=True)
+        # when
+        self.velocity_calculator = UserVelocityCalculator(task_provider=task_provider,
+                                                          story_point_extractor=t_shirt_story_point_extractor,
+                                                          worklog_extractor=jira_worklog_extractor)
+        velocity = self.velocity_calculator.calculate()
+        # then
         self.assertEqual(24, velocity[TEST_USER], 'Must be calculated velocity for test user')
 
     def test_should_calculate_velocity_for_few_worklogs(self):
@@ -70,6 +86,23 @@ class VelocityCalculatorTestCase(unittest.TestCase):
 
         # then
         self.assertEqual(1, len(velocity.keys()), 'Missing calculated velocity data')
+
+    def test_should_calculate_velocity_for_few_worklogs_value_for_test_user(self):
+        # given
+        histories = self.__create_history_entries_with_status_change()
+        histories.extend(self.__create_history_entries_with_status_change())
+        task = self.__create_task_with_log_data(histories)
+        task_provider = ProxyTaskProvider([task])
+        t_shirt_story_point_extractor = JiraCustomFieldStoryPointExtractor('customfield_00000')
+        jira_worklog_extractor = JiraStatusChangeWorklogExtractor(['12207'],
+                                                                  time_format='%Y-%m-%dT%H:%M:%S.%f%z',
+                                                                  use_status_codes=True)
+        # when
+        self.velocity_calculator = UserVelocityCalculator(task_provider=task_provider,
+                                                          story_point_extractor=t_shirt_story_point_extractor,
+                                                          worklog_extractor=jira_worklog_extractor)
+        velocity = self.velocity_calculator.calculate()
+        # then
         self.assertEqual(12, velocity[TEST_USER], 'Must be calculated velocity for test user')
 
     def test_should_calculate_velocity_for_few_tasks(self):
@@ -92,6 +125,22 @@ class VelocityCalculatorTestCase(unittest.TestCase):
 
         # then
         self.assertEqual(1, len(velocity.keys()), 'Missing calculated velocity data')
+
+    def test_should_calculate_velocity_for_few_tasks_value_for_test_user(self):
+        # given
+        task = self.__create_task_with_log_data(self.__create_history_entries_with_status_change())
+        task2 = self.__create_task_with_log_data(self.__create_history_entries_with_status_change(), story_points=2)
+        task_provider = ProxyTaskProvider([task, task2])
+        t_shirt_story_point_extractor = JiraCustomFieldStoryPointExtractor('customfield_00000')
+        jira_worklog_extractor = JiraStatusChangeWorklogExtractor(['12207'],
+                                                                  time_format='%Y-%m-%dT%H:%M:%S.%f%z',
+                                                                  use_status_codes=True)
+        # when
+        self.velocity_calculator = UserVelocityCalculator(task_provider=task_provider,
+                                                          story_point_extractor=t_shirt_story_point_extractor,
+                                                          worklog_extractor=jira_worklog_extractor)
+        velocity = self.velocity_calculator.calculate()
+        # then
         self.assertEqual(20, velocity[TEST_USER], 'Must be calculated velocity for test user')
 
     @staticmethod

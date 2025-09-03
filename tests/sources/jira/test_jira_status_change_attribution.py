@@ -23,7 +23,7 @@ class JiraStatusChangeAttributionTestCase(unittest.TestCase):
     def _assignee_item(to_: str, to_string: str):
         return {'fieldId': 'assignee', 'to': to_, 'toString': to_string}
 
-    def test_mixed_items_and_user_only_change(self):
+    def _build_task_with_histories(self):
         # given: Jira returns newest-first histories
         histories = [
             self._history('2024-02-01T14:00:00.000+0000', [self._status_item('1', '12207')], 'userB', 'User B'),
@@ -34,25 +34,53 @@ class JiraStatusChangeAttributionTestCase(unittest.TestCase):
                 'userA', 'User A'
             ),
         ]
-
-        task = {
+        return {
             'fields': {'status': {'id': '1', 'name': 'Done'}},
             'changelog': {'histories': histories}
         }
 
+    def _extract_per_user(self):
+        task = self._build_task_with_histories()
         extractor = JiraStatusChangeWorklogExtractor(['12207'], use_status_codes=True,
                                                       time_format='%Y-%m-%dT%H:%M:%S.%f%z')
-        per_user = extractor.get_work_time_per_user(task)
+        return extractor.get_work_time_per_user(task)
 
-        # Expect 2 hours for userA (10:00 -> 12:00) and 2 hours for userB (12:00 -> 14:00)
+    def test_per_user_contains_userA(self):
+        # when
+        per_user = self._extract_per_user()
+        # then
         self.assertIn('userA', per_user)
+
+    def test_per_user_contains_userB(self):
+        # when
+        per_user = self._extract_per_user()
+        # then
         self.assertIn('userB', per_user)
+
+    def test_per_user_values_are_duration_instances_userA(self):
+        # when
+        per_user = self._extract_per_user()
+        # then
         self.assertIsInstance(per_user['userA'], Duration)
+
+    def test_per_user_values_are_duration_instances_userB(self):
+        # when
+        per_user = self._extract_per_user()
+        # then
         self.assertIsInstance(per_user['userB'], Duration)
 
+    def test_per_user_userA_value_is_two_hours(self):
+        # when
+        per_user = self._extract_per_user()
+        # then
         userA_seconds = per_user['userA'].to_seconds()
-        userB_seconds = per_user['userB'].to_seconds()
         self.assertAlmostEqual(userA_seconds, 2 * 3600, delta=60)
+
+    def test_per_user_userB_value_is_two_hours(self):
+        # when
+        per_user = self._extract_per_user()
+        # then
+        userB_seconds = per_user['userB'].to_seconds()
         self.assertAlmostEqual(userB_seconds, 2 * 3600, delta=60)
 
 

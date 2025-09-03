@@ -5,15 +5,32 @@ from sd_metrics_lib.sources.azure.tasks import AzureTaskProvider
 
 
 class TestProviderCustomKey(unittest.TestCase):
-    def test_uses_class_name_only(self):
-        key = CacheKeyBuilder.create_provider_custom_key(AzureTaskProvider, ["updates", "123"])
-        # parts are normalized (sorted unique), so expect '123_updates' in some order sorted => ['123','updates']
-        self.assertTrue(key.startswith("custom||AzureTaskProvider||"))
-        self.assertTrue(key.endswith("123_updates"))
+    def test_uses_class_name_only_starts_with_provider_prefix(self):
+        # given
+        provider_class = AzureTaskProvider
+        custom_parts = ["updates", "123"]
+        # when
+        generated_key = CacheKeyBuilder.create_provider_custom_key(provider_class, custom_parts)
+        # then
+        self.assertTrue(generated_key.startswith("custom||AzureTaskProvider||"))
 
-    def test_empty_parts(self):
-        key = CacheKeyBuilder.create_provider_custom_key(AzureTaskProvider, None)
-        self.assertEqual(key, "custom||AzureTaskProvider||")
+    def test_uses_class_name_only_ends_with_sorted_suffix(self):
+        # given
+        provider_class = AzureTaskProvider
+        custom_parts = ["updates", "123"]
+        # when
+        generated_key = CacheKeyBuilder.create_provider_custom_key(provider_class, custom_parts)
+        # then
+        self.assertTrue(generated_key.endswith("123_updates"))
+
+    def test_empty_parts_keeps_provider_prefix(self):
+        # given
+        provider_class = AzureTaskProvider
+        custom_parts = None
+        # when
+        generated_key = CacheKeyBuilder.create_provider_custom_key(provider_class, custom_parts)
+        # then
+        self.assertEqual(generated_key, "custom||AzureTaskProvider||")
 
 
 if __name__ == "__main__":

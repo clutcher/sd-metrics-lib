@@ -30,34 +30,48 @@ class FakeDjangoCache(CacheProtocol):
 
 class CachingTaskProviderTestCase(unittest.TestCase):
 
-    def test_should_use_cache_on_exact_hit(self):
-        # given
+    def _run_exact_hit(self):
         cache = {}
         provider = CountingProvider(tasks=[{"id": 1}], query="project = X", additional_fields=["a", "b"])
         caching = CachingTaskProvider(provider, cache)
-
-        # when
         result1 = caching.get_tasks()
         result2 = caching.get_tasks()
+        return provider, result1, result2
 
+    def test_should_use_cache_on_exact_hit_returns_same_value_on_second_call(self):
+        # when
+        provider, result1, result2 = self._run_exact_hit()
         # then
-        self.assertEqual(result1, [{"id": 1}])
         self.assertEqual(result2, [{"id": 1}])
+
+    def test_should_use_cache_on_exact_hit_provider_called_once(self):
+        # when
+        provider, result1, result2 = self._run_exact_hit()
+        # then
         self.assertEqual(provider.calls, 1)
 
-    def test_should_reuse_superset_when_exact_missing(self):
-        # given
+    def _warm_superset_cache(self):
         cache = {}
         superset_provider = CountingProvider(tasks=[{"id": 1, "a": 1, "b": 2}], query="Q", additional_fields=["a", "b"])
         CachingTaskProvider(superset_provider, cache).get_tasks()
-        self.assertEqual(superset_provider.calls, 1)
+        return cache, superset_provider
 
+    def test_should_reuse_superset_when_exact_missing_returns_superset_value(self):
+        # given
+        cache, superset_provider = self._warm_superset_cache()
         # when
-        subset_provider = CountingProvider(tasks=[{"id": 999}], query="Q", additional_fields=["a"])  # would be used only if miss
+        subset_provider = CountingProvider(tasks=[{"id": 999}], query="Q", additional_fields=["a"])  # used only on miss
         result = CachingTaskProvider(subset_provider, cache).get_tasks()
-
         # then
         self.assertEqual(result, [{"id": 1, "a": 1, "b": 2}])
+
+    def test_should_reuse_superset_when_exact_missing_does_not_call_subset_provider(self):
+        # given
+        cache, superset_provider = self._warm_superset_cache()
+        # when
+        subset_provider = CountingProvider(tasks=[{"id": 999}], query="Q", additional_fields=["a"])  # used only on miss
+        CachingTaskProvider(subset_provider, cache).get_tasks()
+        # then
         self.assertEqual(subset_provider.calls, 0)
 
     def test_should_normalize_fields_to_avoid_duplicates(self):

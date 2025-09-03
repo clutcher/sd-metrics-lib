@@ -102,14 +102,11 @@ class AssigneeTimeAttributionTestCase(unittest.TestCase):
         self.otoniel = 'otoniel-id'
         self.alice = 'alice-id'
 
-    def test_single_status_tracking_with_assignee_change(self):
-        # given
+    def _build_single_status_scenario(self):
         extractor = TestableAbstractStatusChangeWorklogExtractor(
             transition_statuses=['In Progress']
         )
-
         changelog_entries = [
-            # Jun 25: New → In Progress (Igor)
             MockChangelogEntry(
                 fields={
                     'status_change': MockField(old_value='New', new_value='In Progress'),
@@ -117,7 +114,6 @@ class AssigneeTimeAttributionTestCase(unittest.TestCase):
                 },
                 revised_date=datetime(2024, 6, 25, 9, 0, tzinfo=timezone.utc)
             ),
-            # Aug 20: In Progress → Pending Acceptance (Igor still assigned)
             MockChangelogEntry(
                 fields={
                     'status_change': MockField(old_value='In Progress', new_value='Pending Acceptance'),
@@ -125,7 +121,6 @@ class AssigneeTimeAttributionTestCase(unittest.TestCase):
                 },
                 revised_date=datetime(2024, 8, 20, 17, 30, tzinfo=timezone.utc)
             ),
-            # Sep 2: Pending Acceptance → Closed (Otoniel assigned) ← Assignee change
             MockChangelogEntry(
                 fields={
                     'status_change': MockField(old_value='Pending Acceptance', new_value='Closed'),
@@ -135,20 +130,31 @@ class AssigneeTimeAttributionTestCase(unittest.TestCase):
                 revised_date=datetime(2024, 9, 2, 14, 0, tzinfo=timezone.utc)
             )
         ]
-        
         task = MockTask(fields={
             'changelog_entries': changelog_entries,
-            'current_status': 'Closed'  # Not tracked
+            'current_status': 'Closed'
         })
-        
         result = extractor.get_work_time_per_user(task)
+        return result
 
+    def test_single_status_igor_present_in_result(self):
+        # when
+        result = self._build_single_status_scenario()
+        # then
+        self.assertIn(self.igor, result)
+
+    def test_single_status_otoniel_not_in_result(self):
+        # when
+        result = self._build_single_status_scenario()
+        # then
+        self.assertNotIn(self.otoniel, result)
+
+    def test_single_status_seconds_for_igor_approximately_expected(self):
+        # when
+        result = self._build_single_status_scenario()
         # then
         expected_igor_seconds = (datetime(2024, 8, 20, 17, 30, tzinfo=timezone.utc) -
                                  datetime(2024, 6, 25, 9, 0, tzinfo=timezone.utc)).total_seconds()
-
-        self.assertIn(self.igor, result)
-        self.assertNotIn(self.otoniel, result)
         igor_seconds = result[self.igor].to_seconds()
         self.assertAlmostEqual(igor_seconds, expected_igor_seconds, delta=3600)
     

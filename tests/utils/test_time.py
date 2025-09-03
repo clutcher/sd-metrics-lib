@@ -7,68 +7,101 @@ from sd_metrics_lib.utils.time import TimeUnit, TimePolicy, Duration, SECONDS_IN
 
 class TestTimePolicy(unittest.TestCase):
     def test_all_hours_seconds_to_hour(self):
+        # given
         all_hours_policy = TimePolicy.ALL_HOURS
+        # when
         converted_seconds_to_hours = Duration.of(all_hours_policy.convert(SECONDS_IN_HOUR, TimeUnit.SECOND, TimeUnit.HOUR), TimeUnit.HOUR)
+        # then
         expected_one_hour_duration = Duration.of(1.0, TimeUnit.HOUR)
         self.assertEqual(converted_seconds_to_hours, expected_one_hour_duration)
 
     def test_all_hours_seconds_to_day(self):
+        # given
         all_hours_policy = TimePolicy.ALL_HOURS
+        # when
         converted_seconds_to_days = Duration.of(all_hours_policy.convert(SECONDS_IN_HOUR * 24, TimeUnit.SECOND, TimeUnit.DAY), TimeUnit.DAY)
+        # then
         expected_one_day_duration = Duration.of(1.0, TimeUnit.DAY)
         self.assertEqual(converted_seconds_to_days, expected_one_day_duration)
 
     def test_all_hours_day_to_seconds(self):
+        # given
         all_hours_policy = TimePolicy.ALL_HOURS
+        # when
         converted_one_day_to_seconds = Duration.of(all_hours_policy.convert(1, TimeUnit.DAY, TimeUnit.SECOND), TimeUnit.SECOND)
+        # then
         expected_seconds_in_day = Duration.of(24 * SECONDS_IN_HOUR, TimeUnit.SECOND)
         self.assertEqual(converted_one_day_to_seconds, expected_seconds_in_day)
 
     def test_all_hours_hours_to_day(self):
+        # given
         all_hours_policy = TimePolicy.ALL_HOURS
+        # when
         converted_24h_to_days = Duration.of(all_hours_policy.convert(24, TimeUnit.HOUR, TimeUnit.DAY), TimeUnit.DAY)
+        # then
         expected_one_day = Duration.of(1.0, TimeUnit.DAY)
         self.assertEqual(converted_24h_to_days, expected_one_day)
 
     def test_all_hours_week_to_day(self):
+        # given
         all_hours_policy = TimePolicy.ALL_HOURS
+        # when
         converted_week_to_days = Duration.of(all_hours_policy.convert(1, TimeUnit.WEEK, TimeUnit.DAY), TimeUnit.DAY)
+        # then
         expected_seven_days = Duration.of(7, TimeUnit.DAY)
         self.assertEqual(converted_week_to_days, expected_seven_days)
 
     def test_all_hours_month_to_day(self):
+        # given
         all_hours_policy = TimePolicy.ALL_HOURS
+        # when
         converted_month_to_days = Duration.of(all_hours_policy.convert(1, TimeUnit.MONTH, TimeUnit.DAY), TimeUnit.DAY)
+        # then
         expected_thirty_days = Duration.of(30, TimeUnit.DAY)
         self.assertEqual(converted_month_to_days, expected_thirty_days)
 
     def test_all_hours_identity(self):
+        # given
         all_hours_policy = TimePolicy.ALL_HOURS
+        # when
         converted_identity_hours = Duration.of(all_hours_policy.convert(3.14, TimeUnit.HOUR, TimeUnit.HOUR), TimeUnit.HOUR)
+        # then
         expected_same_hours = Duration.of(3.14, TimeUnit.HOUR)
         self.assertEqual(converted_identity_hours, expected_same_hours)
 
     def test_business_hours_hour_to_day(self):
+        # given
         business_hours_policy = TimePolicy.BUSINESS_HOURS
+        # when
         converted_working_hours_per_day_to_day = Duration.of(business_hours_policy.convert(WORKING_HOURS_PER_DAY, TimeUnit.HOUR, TimeUnit.DAY), TimeUnit.DAY)
+        # then
         expected_one_business_day = Duration.of(1.0, TimeUnit.DAY)
         self.assertEqual(converted_working_hours_per_day_to_day, expected_one_business_day)
 
     def test_business_hours_day_to_seconds(self):
+        # given
         business_hours_policy = TimePolicy.BUSINESS_HOURS
+        # when
         converted_business_day_to_seconds = Duration.of(business_hours_policy.convert(1, TimeUnit.DAY, TimeUnit.SECOND), TimeUnit.SECOND)
+        # then
         expected_seconds_in_business_day = Duration.of(WORKING_HOURS_PER_DAY * SECONDS_IN_HOUR, TimeUnit.SECOND)
         self.assertEqual(converted_business_day_to_seconds, expected_seconds_in_business_day)
 
     def test_business_hours_week_to_day(self):
+        # given
         business_hours_policy = TimePolicy.BUSINESS_HOURS
+        # when
         converted_business_week_to_days = Duration.of(business_hours_policy.convert(1, TimeUnit.WEEK, TimeUnit.DAY), TimeUnit.DAY)
+        # then
         expected_working_days_per_week = Duration.of(WORKING_DAYS_PER_WEEK, TimeUnit.DAY)
         self.assertEqual(converted_business_week_to_days, expected_working_days_per_week)
 
     def test_business_hours_month_to_day(self):
+        # given
         business_hours_policy = TimePolicy.BUSINESS_HOURS
+        # when
         converted_business_month_to_days = Duration.of(business_hours_policy.convert(1, TimeUnit.MONTH, TimeUnit.DAY), TimeUnit.DAY)
+        # then
         expected_working_days_per_month = Duration.of(WORKING_DAYS_PER_WEEK * WORKING_WEEKS_IN_MONTH, TimeUnit.DAY)
         self.assertEqual(converted_business_month_to_days, expected_working_days_per_month)
 
@@ -91,16 +124,37 @@ class TestTimePolicy(unittest.TestCase):
 
 class TestDuration(unittest.TestCase):
     def test_zero_returns_false_bool(self):
-        z = Duration.zero(TimeUnit.HOUR)
-        assert not z
+        # given
+        time_unit_hour = TimeUnit.HOUR
+        # when
+        zero_duration = Duration.zero(time_unit_hour)
+        # then
+        assert not zero_duration
 
-    def test_zero_keeps_unit_and_value(self):
-        z = Duration.zero(TimeUnit.HOUR)
-        assert z.time_delta == 0.0 and z.time_unit == TimeUnit.HOUR
+    def test_zero_keeps_zero_value(self):
+        # given
+        time_unit_hour = TimeUnit.HOUR
+        # when
+        zero_duration = Duration.zero(time_unit_hour)
+        # then
+        self.assertEqual(zero_duration.time_delta, 0.0)
 
-    def test_of_constructs(self):
-        d = Duration.of(2, TimeUnit.DAY)
-        assert d and d.time_delta == 2.0 and d.time_unit == TimeUnit.DAY
+    def test_zero_keeps_requested_unit(self):
+        # given
+        time_unit_hour = TimeUnit.HOUR
+        # when
+        zero_duration = Duration.zero(time_unit_hour)
+        # then
+        self.assertEqual(zero_duration.time_unit, TimeUnit.HOUR)
+
+    def test_of_constructs_requested_duration(self):
+        # given
+        requested_value = 2
+        requested_unit = TimeUnit.DAY
+        # when
+        constructed_duration = Duration.of(requested_value, requested_unit)
+        # then
+        self.assertEqual(constructed_duration, Duration.of(2.0, TimeUnit.DAY))
 
     def test_difference_numeric(self):
         d = Duration.difference(10, 25.5, TimeUnit.HOUR)
