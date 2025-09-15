@@ -1,5 +1,4 @@
 import datetime
-from concurrent.futures import ThreadPoolExecutor
 
 from atlassian import Jira
 
@@ -10,11 +9,9 @@ from sd_metrics_lib.sources.jira.tasks import JiraTaskProvider
 from sd_metrics_lib.sources.jira.worklog import JiraStatusChangeWorklogExtractor, JiraWorklogExtractor
 from sd_metrics_lib.sources.tasks import CachingTaskProvider
 from sd_metrics_lib.sources.worklog import ChainedWorklogExtractor
-from utils.time import TimeUnit
+from sd_metrics_lib.utils.time import TimeUnit
 
 CACHE = {}
-
-jira_fetch_executor = ThreadPoolExecutor(thread_name_prefix="jira-fetch")
 
 def user_velocity_integration_test(client, additional_fields=None):
     def create_task_provider(jira):

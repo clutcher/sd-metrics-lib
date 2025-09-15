@@ -1,6 +1,3 @@
-import concurrent
-import math
-from concurrent.futures import ThreadPoolExecutor, wait
 from typing import Iterable
 
 from sd_metrics_lib.sources.tasks import TaskProvider
@@ -12,7 +9,7 @@ class JiraTaskProvider(TaskProvider):
                  jira_client,
                  query: str,
                  additional_fields: Iterable[str] = None,
-                 thread_pool_executor: ThreadPoolExecutor = None) -> None:
+                 page_size: int = 1000) -> None:
         self.jira_client = jira_client
         self.query = query.strip()
         self.additional_fields = additional_fields
@@ -21,7 +18,7 @@ class JiraTaskProvider(TaskProvider):
         else:
             # For Jira, additional_fields correspond to expand values (e.g., 'changelog')
             self._expand_str = ",".join(self.additional_fields)
-        self.thread_pool_executor = thread_pool_executor
+        self.page_size = max(1, page_size)
 
     def get_tasks(self):
         tasks = self._fetch_tasks(self.query, self._expand_str)
@@ -31,47 +28,29 @@ class JiraTaskProvider(TaskProvider):
         return tasks
 
     def _fetch_tasks(self, query: str, expand_str: str):
-        first_page = self.jira_client.jql(query, expand=expand_str, limit=self._get_task_fetch_amount())
-        first_page_tasks = first_page.get("issues", [])
-        tasks_total_count = first_page.get("total", len(first_page_tasks))
-        page_len = len(first_page_tasks)
-        if tasks_total_count == 0 or page_len == 0:
-            return []
+        all_tasks = []
+        next_page_token = None
 
-        tasks = []
-        tasks.extend(first_page_tasks)
-        if page_len < tasks_total_count:
-            amount_of_fetches = math.ceil(tasks_total_count / float(page_len))
+        while True:
+            result = self.jira_client.enhanced_jql(
+                query,
+                expand=expand_str,
+                limit=self.page_size,
+                nextPageToken=next_page_token
+            )
 
-            if self.thread_pool_executor is None:
-                self._fetch_task_sync(tasks, amount_of_fetches, page_len)
-            else:
-                self._fetch_task_concurrently(tasks, amount_of_fetches, page_len)
-        return tasks
+            current_tasks = result.get("issues", [])
+            if not current_tasks:
+                break
 
-    def _fetch_task_concurrently(self, tasks, amount_of_fetches, page_len):
-        features = []
-        for i in range(1, amount_of_fetches):
-            next_search_start = i * page_len
-            feature = self.thread_pool_executor.submit(self.jira_client.jql,
-                                                       self.query,
-                                                       expand=self._expand_str,
-                                                       limit=self._get_task_fetch_amount(),
-                                                       start=next_search_start)
-            features.append(feature)
-        done, not_done = wait(features, return_when=concurrent.futures.ALL_COMPLETED)
-        for feature in done:
-            tasks.extend(feature.result().get("issues", []))
+            all_tasks.extend(current_tasks)
 
-    def _fetch_task_sync(self, tasks, amount_of_fetches, page_len):
-        for i in range(1, amount_of_fetches):
-            start = i * page_len
-            current_page_result = self.jira_client.jql(self.query,
-                                                       expand=self._expand_str,
-                                                       limit=self._get_task_fetch_amount(),
-                                                       start=start)
-            current_page_tasks = current_page_result.get("issues", [])
-            tasks.extend(current_page_tasks)
+            next_page_token = result.get('nextPageToken')
+            if not next_page_token:
+                break
+
+        return all_tasks
+
 
     def _fetch_child_tasks_and_replace_subtasks_field(self, jira_tasks: Iterable[dict]):
         if not jira_tasks:
@@ -116,8 +95,3 @@ class JiraTaskProvider(TaskProvider):
             if child_key in child_task_id_to_child_task
         ]
 
-    def _get_task_fetch_amount(self):
-        if self.thread_pool_executor is None:
-            return 100
-        else:
-            return 50

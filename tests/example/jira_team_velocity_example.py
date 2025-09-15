@@ -1,6 +1,6 @@
 from atlassian import Jira
 
-from calculators.velocity import GeneralizedTeamVelocityCalculator
+from sd_metrics_lib.calculators.velocity import GeneralizedTeamVelocityCalculator
 from sd_metrics_lib.utils.time import TimeUnit
 from sd_metrics_lib.sources.jira.story_points import JiraTShirtStoryPointExtractor
 from sd_metrics_lib.sources.jira.tasks import JiraTaskProvider

@@ -26,7 +26,7 @@ Homepage = "https://github.com/clutcher/sd-metrics-lib"
 
 [project.optional-dependencies]
 jira = [
-    "atlassian-python-api>=3.0",
+    "atlassian-python-api>=4.0.7",
 ]
 azure = [
     "azure-devops>=7.1.0b4",
