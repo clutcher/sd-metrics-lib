@@ -360,7 +360,7 @@ wl = FunctionWorklogExtractor(my_worklog)
 
 ## Supported environments
 
-- Python: 3.10+
+- Python: 3.9+
 - Optional extras: [jira], [azure]
 
 ## Security
@@ -368,6 +368,10 @@ wl = FunctionWorklogExtractor(my_worklog)
 - Do not embed tokens in code; prefer environment variables or secret managers.
 
 ## Version history
+
+### 7.0
+
++ (Breaking) JiraTaskProvider API migrated to the latest Jira API using enhanced_jql with new pagination.
 
 ### 6.3.0
 
