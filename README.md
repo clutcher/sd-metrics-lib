@@ -369,6 +369,10 @@ wl = FunctionWorklogExtractor(my_worklog)
 
 ## Version history
 
+### 7.0.1
+
++ (Feature) Add ProportionalStoryPointCalculator to distributed story points based on spent time.
+
 ### 7.0
 
 + (Breaking) JiraTaskProvider API migrated to the latest Jira API using enhanced_jql with new pagination.
