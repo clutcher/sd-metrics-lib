@@ -34,45 +34,50 @@ class SimpleWorkTimeExtractor(WorkTimeExtractor):
         if time_policy == TimePolicy.ALL_HOURS:
             return calendar_elapsed_seconds.convert(result_unit, TimePolicy.ALL_HOURS)
 
-        business_candidate_duration_seconds = calendar_elapsed_seconds
-
-        multi_day_span_in_calendar_days = business_candidate_duration_seconds.convert(TimeUnit.DAY, TimePolicy.ALL_HOURS)
-        if multi_day_span_in_calendar_days.time_delta >= 1.0:
-            working_days_count = self.__count_work_days_policy_aware(start_time_period, end_time_period, time_policy)
-            rounded_up_calendar_days = int(multi_day_span_in_calendar_days.time_delta) + 1
-            capped_business_seconds = Duration.of(min(working_days_count, rounded_up_calendar_days), TimeUnit.DAY).convert(TimeUnit.SECOND, time_policy)
-            return capped_business_seconds.convert(result_unit, time_policy)
-
-        one_business_day_seconds = Duration.of(1, TimeUnit.DAY).convert(TimeUnit.SECOND, time_policy)
-        if business_candidate_duration_seconds.time_delta < one_business_day_seconds.time_delta:
-            return business_candidate_duration_seconds.convert(result_unit, time_policy)
-        return one_business_day_seconds.convert(result_unit, time_policy)
+        weekday_calendar_hours = self._weekday_calendar_hours(start_time_period, end_time_period, time_policy)
+        business_effort = self._ramp_then_plateau_effort(weekday_calendar_hours, time_policy)
+        return business_effort.convert(result_unit, time_policy)
 
     @staticmethod
-    def __count_work_days_policy_aware(start_date: datetime.date, end_date: datetime.date, policy: TimePolicy) -> int:
-        working_days_per_week_as_int = int(policy.days_per_week)
-        if working_days_per_week_as_int <= 0:
-            return 0
-        last_workday_weekday_index = working_days_per_week_as_int - 1
+    def _ramp_then_plateau_effort(weekday_calendar_hours: Duration, time_policy: TimePolicy) -> Duration:
+        calendar_days = weekday_calendar_hours.convert(TimeUnit.DAY, TimePolicy.ALL_HOURS)
+        full_days = Duration.of(int(calendar_days.time_delta), TimeUnit.DAY)
 
-        if start_date.weekday() > last_workday_weekday_index:
-            start_date = start_date + datetime.timedelta(days=(7 - start_date.weekday()))
-        if end_date.weekday() > last_workday_weekday_index:
-            end_date = end_date - datetime.timedelta(days=(end_date.weekday() - last_workday_weekday_index))
+        partial_calendar_hours = weekday_calendar_hours.sub(full_days, TimePolicy.ALL_HOURS, TimeUnit.HOUR)
+        one_business_day_hours = Duration.of(1, TimeUnit.DAY).convert(TimeUnit.HOUR, time_policy)
+        ramp_effort = min(partial_calendar_hours, one_business_day_hours)
 
-        if start_date > end_date:
-            return 0
+        return full_days.add(ramp_effort, time_policy, TimeUnit.HOUR)
 
-        inclusive_span_days = (end_date - start_date).days + 1
-        full_weeks_in_span = inclusive_span_days // 7
-        trailing_days_beyond_full_weeks = inclusive_span_days % 7
+    @staticmethod
+    def _weekday_calendar_hours(start_time_period: datetime.date | datetime.datetime,
+                                end_time_period: datetime.date | datetime.datetime,
+                                time_policy: TimePolicy) -> Duration:
+        last_workday_weekday_index = int(time_policy.days_per_week) - 1
+        if last_workday_weekday_index < 0:
+            return Duration.zero(TimeUnit.HOUR)
 
-        working_days = full_weeks_in_span * working_days_per_week_as_int
-        start_weekday_index = start_date.weekday()
-        for day_offset in range(trailing_days_beyond_full_weeks):
-            if (start_weekday_index + day_offset) % 7 <= last_workday_weekday_index:
-                working_days += 1
-        return working_days
+        weekday_calendar_hours = Duration.zero(TimeUnit.HOUR)
+        segment_start = SimpleWorkTimeExtractor._as_datetime(start_time_period)
+        end_moment = SimpleWorkTimeExtractor._as_datetime(end_time_period)
+        while segment_start < end_moment:
+            segment_end = min(SimpleWorkTimeExtractor._next_midnight(segment_start), end_moment)
+            if segment_start.weekday() <= last_workday_weekday_index:
+                segment_hours = Duration.datetime_difference(segment_start, segment_end, TimeUnit.HOUR)
+                weekday_calendar_hours = weekday_calendar_hours.add(segment_hours, TimePolicy.ALL_HOURS, TimeUnit.HOUR)
+            segment_start = segment_end
+        return weekday_calendar_hours
+
+    @staticmethod
+    def _as_datetime(moment: datetime.date | datetime.datetime) -> datetime.datetime:
+        if isinstance(moment, datetime.datetime):
+            return moment
+        return datetime.datetime.combine(moment, datetime.time.min)
+
+    @staticmethod
+    def _next_midnight(moment: datetime.datetime) -> datetime.datetime:
+        next_date = moment.date() + datetime.timedelta(days=1)
+        return datetime.datetime.combine(next_date, datetime.time.min, tzinfo=moment.tzinfo)
 
 SIMPLE_WORKTIME_EXTRACTOR = SimpleWorkTimeExtractor()
 

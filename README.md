@@ -369,6 +369,10 @@ wl = FunctionWorklogExtractor(my_worklog)
 
 ## Version history
 
+### 7.1.0
+
++ (Breaking) SimpleWorkTimeExtractor now computes spent time with a continuous "ramp then plateau" model instead of rounding partial days up to whole business days. Each full 24 calendar hours contributes one business day; within a partial day the first `hours_per_day` calendar hours map 1:1 to business hours and the remaining hours contribute nothing. This removes the day-boundary cliff (e.g. 48h is now 16h, not 24h; 72h is now 24h, not 32h), so computed durations are generally lower and smoother. Weekend days are still excluded. Known accepted limitation: off-hours calendar time still accrues within the ramp, since the extractor does not assume a per-team workday window.
+
 ### 7.0.1
 
 + (Feature) Add ProportionalStoryPointCalculator to distributed story points based on spent time.
