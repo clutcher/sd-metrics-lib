@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use sd-metrics-lib, please cite it as below."
+type: software
+title: "sd-metrics-lib"
+abstract: "A Python library that calculates developer and team velocity and other metrics of the software development process from Jira and Azure DevOps data."
+authors:
+  - family-names: Zarvanskyi
+    given-names: Igor
+    website: "https://clutcher.dev"
+repository-code: "https://github.com/clutcher/sd-metrics-lib"
+url: "https://pypi.org/project/sd-metrics-lib/"
+license: MIT
+keywords:
+  - software development metrics
+  - team velocity
+  - delivery forecasting
+  - Jira
+  - Azure DevOps
